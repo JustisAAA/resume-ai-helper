@@ -279,8 +279,11 @@ async function authMiddleware(req: Request, res: Response, next: Function) {
 
 // 调用腾讯元器API的通用函数
 async function callYuanqi(userId: string, prompt: string, timeout = 60000) {
-  const appid = process.env.YUANQI_APPID || '2047291498014477504';
-  const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+  const appid = process.env.YUANQI_APPID;
+  const appkey = process.env.YUANQI_APPKEY;
+  if (!appid || !appkey) {
+    throw new Error('服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量');
+  }
   
   const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
     assistant_id: appid,
@@ -366,7 +369,10 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
 
 // 调用腾讯元器Embedding API
 async function embedText(text: string): Promise<number[]> {
-  const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+  const appkey = process.env.YUANQI_APPKEY;
+  if (!appkey) {
+    throw new Error('服务器配置错误：缺少 YUANQI_APPKEY 环境变量');
+  }
   try {
     const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/embeddings', {
       model: 'text-embedding-ada-002',

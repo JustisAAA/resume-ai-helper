@@ -274,8 +274,11 @@ router.post('/:id/analyze', authMiddleware, async (req: Request, res: Response) 
     }
     
     // 调用元器API进行简历分析与评分
-    const appid = process.env.YUANQI_APPID || '2047291498014477504';
-    const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+    const appid = process.env.YUANQI_APPID;
+    const appkey = process.env.YUANQI_APPKEY;
+    if (!appid || !appkey) {
+      return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+    }
 
     const prompt = `请对以下简历进行全面分析和评分，并以严格 JSON 格式返回结果（不要添加任何 JSON 以外的说明文字）：
 
@@ -375,8 +378,11 @@ router.post('/:id/score', authMiddleware, async (req: Request, res: Response) =>
     }
     
     // 调用元器API进行简历评分
-    const appid = process.env.YUANQI_APPID || '2047291498014477504';
-    const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+    const appid = process.env.YUANQI_APPID;
+    const appkey = process.env.YUANQI_APPKEY;
+    if (!appid || !appkey) {
+      return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+    }
     
     const message = `请对以下简历进行评分，严格按照JSON格式输出结果。
 
@@ -468,8 +474,11 @@ router.post('/:id/apply-template', authMiddleware, async (req: Request, res: Res
       return res.status(400).json({ error: '简历内容为空或解析失败，无法生成模板简历' });
     }
 
-    const appid = process.env.YUANQI_APPID || '2047291498014477504';
-    const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+    const appid = process.env.YUANQI_APPID;
+    const appkey = process.env.YUANQI_APPKEY;
+    if (!appid || !appkey) {
+      return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+    }
 
     const templateStyles: Record<string, string> = {
       minimal: '简约经典：黑白灰色系，单栏布局，适合传统行业',

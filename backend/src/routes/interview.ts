@@ -249,8 +249,11 @@ router.post('/:id/start', authMiddleware, async (req: Request, res: Response) =>
     const role = interview.aiRole === 'STRICT' ? '严厉的资深面试官' : interview.aiRole === 'FRIENDLY' ? '友好的面试官' : '专业的面试官';
     const resumeText = (interview.resume as any)?.content || '暂无简历内容';
 
-    const appid = process.env.YUANQI_APPID || '2047291498014477504';
-    const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+    const appid = process.env.YUANQI_APPID;
+    const appkey = process.env.YUANQI_APPKEY;
+    if (!appid || !appkey) {
+      return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+    }
 
     const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
       assistant_id: appid,
@@ -414,8 +417,11 @@ router.post('/:id/answer', authMiddleware, async (req: Request, res: Response) =
     
     // 真实模式：调用腾讯元器API评价回答并生成下一个问题
     let score: number, comment: string, highlights: string[], improvements: string[], nextQuestion: string;
-      const appid = process.env.YUANQI_APPID || '2047291498014477504';
-      const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+      const appid = process.env.YUANQI_APPID;
+      const appkey = process.env.YUANQI_APPKEY;
+      if (!appid || !appkey) {
+        return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+      }
       
       const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
         assistant_id: appid,
@@ -625,8 +631,11 @@ router.post('/:id/report', authMiddleware, async (req: Request, res: Response) =
     }
     
     // 真实模式：调用元器API生成报告
-    const appid = process.env.YUANQI_APPID || '2047291498014477504';
-    const appkey = process.env.YUANQI_APPKEY || 'bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4';
+    const appid = process.env.YUANQI_APPID;
+    const appkey = process.env.YUANQI_APPKEY;
+    if (!appid || !appkey) {
+      return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+    }
     
     // 构建面试历史文本
     const interviewHistory = answers.map((a: any, index: number) => {
