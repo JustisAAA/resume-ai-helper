@@ -104,7 +104,7 @@ export default function Home() {
     {
       icon: (
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.228-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
       ),
       title: '人岗匹配',
@@ -116,26 +116,26 @@ export default function Home() {
     {
       icon: (
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
         </svg>
       ),
       title: '简历优化',
       desc: 'AI 深度优化简历表达，提升关键词覆盖和可读性',
       action: '开始优化',
       path: '/tools/optimize',
-      color: 'cyan',
+      color: 'amber',
     },
     {
       icon: (
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.45-.086.908-.177 1.372-.274l1.118-1.118a1.274 1.274 0 011.8 0l1.118 1.118c.464.097.922.188 1.372.274m-7.072 0A37.97 37.97 0 0112 6c1.02 0 2.026.048 3.012.14m-7.072 0A37.97 37.97 0 0021 12c0 1.02-.05 2.025-.146 3.012m7.072-7.072A37.97 37.97 0 0012 18c-1.02 0-2.025-.05-3.012-.146m7.072-7.072A37.97 37.97 0 0012 6v12m0 0a9 9 0 110-18 9 9 0 010 18z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       ),
       title: '面试问题',
       desc: 'AI 根据岗位生成高频面试问题，附标准答案要点',
       action: '查看问题',
       path: '/tools/questions',
-      color: 'lime',
+      color: 'cyan',
     },
   ]
 
