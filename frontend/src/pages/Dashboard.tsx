@@ -208,7 +208,9 @@ export default function Dashboard() {
   useEffect(() => {
     const userStr = localStorage.getItem('user')
     if (!userStr) { navigate('/login'); return }
-    try { setUser(JSON.parse(userStr)) } catch { localStorage.removeItem('user'); navigate('/login'); return }
+    let parsed: UserProfile | null = null
+    try { parsed = JSON.parse(userStr); setUser(parsed) } catch { localStorage.removeItem('user'); navigate('/login'); return }
+    if (parsed?.role === 'ADMIN') { navigate('/admin'); return }
     fetchData()
   }, [])
 

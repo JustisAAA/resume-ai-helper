@@ -20,7 +20,7 @@ export default function Login() {
       const res = await authAPI.login(form)
       localStorage.setItem('token', res.token)
       localStorage.setItem('user', JSON.stringify(res.user))
-      navigate('/dashboard')
+      navigate(res.user.role === 'ADMIN' ? '/admin' : '/dashboard')
     } catch (err: unknown) {
       const errObj = err as { response?: { data?: { error?: string } } };
       const msg = errObj.response?.data?.error || '登录失败，请检查邮箱和密码';

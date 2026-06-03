@@ -33,6 +33,7 @@ export interface AuthResponse {
     id: string;
     email: string;
     name: string;
+    role: string;
   };
 }
 
@@ -41,6 +42,7 @@ export interface UserProfile {
   email: string;
   name: string;
   avatar?: string;
+  role: string;
   createdAt: string;
 }
 
