@@ -22,7 +22,6 @@ const TrashIcon = ({ className }: { className?: string }) => (
 
 const statusColor: Record<string, string> = {
   ACTIVE:   'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  INACTIVE: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
   BANNED:   'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
 
@@ -31,7 +30,7 @@ const roleColor: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
-const statusLabel: Record<string, string> = { ACTIVE: '正常', INACTIVE: '未激活', BANNED: '已封禁' };
+const statusLabel: Record<string, string> = { ACTIVE: '正常', BANNED: '已封禁' };
 const roleLabel: Record<string, string> = { USER: '普通用户', ADMIN: '管理员' };
 
 /* ── 主组件 ── */
@@ -110,7 +109,6 @@ export default function AdminUsers() {
         >
           <option value="">全部状态</option>
           <option value="ACTIVE">正常</option>
-          <option value="INACTIVE">未激活</option>
           <option value="BANNED">已封禁</option>
         </select>
         <button type="submit" className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm hover:bg-red-600 transition-colors">

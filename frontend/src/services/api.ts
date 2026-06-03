@@ -421,7 +421,7 @@ export interface AdminUser {
   email: string;
   name: string;
   role: 'USER' | 'ADMIN';
-  status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
+  status: 'ACTIVE' | 'BANNED';
   createdAt: string;
   _count?: {
     resumes: number;
@@ -474,7 +474,7 @@ export const adminAPI = {
    * 更新用户（状态）
    */
   async updateUser(token: string, userId: string, data: {
-    status?: 'ACTIVE' | 'INACTIVE' | 'BANNED';
+    status?: 'ACTIVE' | 'BANNED';
   }): Promise<{ user: AdminUser }> {
     const res = await import('axios').then(m => m.default.put(getApiUrl(`/admin/users/${userId}`), data, {
       headers: { Authorization: `Bearer ${token}` }

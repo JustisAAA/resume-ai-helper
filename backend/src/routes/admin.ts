@@ -121,7 +121,7 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req: AuthReques
 
     const updateData: any = {};
     if (status !== undefined) {
-      if (!['ACTIVE', 'INACTIVE', 'BANNED'].includes(status)) {
+      if (!['ACTIVE', 'BANNED'].includes(status)) {
         return res.status(400).json({ error: '无效的状态' });
       }
       updateData.status = status;
