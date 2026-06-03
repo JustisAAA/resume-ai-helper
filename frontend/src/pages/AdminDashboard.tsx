@@ -6,9 +6,9 @@ import ErrorAlert from '../components/ErrorAlert';
 
 /* ── 图标组件 ── */
 
-const UsersIcon = ({ className }: { className?: string }) => (
+const PersonIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.953 9.953 0 01-5.5-1.375A9.953 9.953 0 015 19.128m10 0a9.953 9.953 0 00-5.5-1.375m5.5 1.375v-.378a6 6 0 00-3.138-5.592m3.138 5.97a6 6 0 01-5.973 0m5.973 0a6 6 0 01-3.138-5.592M12 12.75a3 3 0 11-6 0 3 3 0 016 0zm-3 0a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
   </svg>
 );
 
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   if (error) return <ErrorAlert message={error} onClose={() => setError('')} />;
 
   const statCards = [
-    { label: '总用户数', value: stats?.userCount ?? '-', icon: <UsersIcon className="w-7 h-7 text-blue-500" />, color: 'blue' },
+    { label: '总用户数', value: stats?.userCount ?? '-', icon: <PersonIcon className="w-7 h-7 text-blue-500" />, color: 'blue' },
     { label: '总简历数', value: stats?.resumeCount ?? '-', icon: <ResumeIcon className="w-7 h-7 text-green-500" />, color: 'green' },
     { label: '总面试数', value: stats?.interviewCount ?? '-', icon: <InterviewIcon className="w-7 h-7 text-purple-500" />, color: 'purple' },
     { label: '总报告数', value: stats?.reportCount ?? '-', icon: <ReportIcon className="w-7 h-7 text-amber-500" />, color: 'amber' },
