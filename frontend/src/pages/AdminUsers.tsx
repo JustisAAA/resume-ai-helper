@@ -75,16 +75,6 @@ export default function AdminUsers() {
       .catch(err => { setError(err.message || '操作失败'); setActionLoading(''); });
   };
 
-  const handleToggleRole = (user: AdminUser) => {
-    if (!token) return;
-    const next = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
-    if (!confirm(`确认将「${user.name || user.email}」${next === 'ADMIN' ? '设为管理员' : '取消管理员'}？`)) return;
-    setActionLoading(user.id);
-    adminAPI.updateUser(token, user.id, { role: next })
-      .then(() => fetchUsers())
-      .catch(err => { setError(err.message || '操作失败'); setActionLoading(''); });
-  };
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
@@ -138,9 +128,6 @@ export default function AdminUsers() {
                 <th className="px-4 py-3 text-left">姓名</th>
                 <th className="px-4 py-3 text-left">角色</th>
                 <th className="px-4 py-3 text-left">状态</th>
-                <th className="px-4 py-3 text-center">简历</th>
-                <th className="px-4 py-3 text-center">面试</th>
-                <th className="px-4 py-3 text-center">报告</th>
                 <th className="px-4 py-3 text-left">注册时间</th>
                 <th className="px-4 py-3 text-right">操作</th>
               </tr>
@@ -160,19 +147,12 @@ export default function AdminUsers() {
                       {statusLabel[u.status] || u.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{u._count?.resumes ?? 0}</td>
-                  <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{u._count?.interviews ?? 0}</td>
-                  <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{u._count?.reports ?? 0}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
                     {u.role === 'ADMIN' ? (
                       <span className="text-xs text-gray-400 dark:text-gray-500">系统账号</span>
                     ) : (
                       <div className="flex justify-end gap-1">
-                        <button onClick={() => handleToggleRole(u)} disabled={actionLoading === u.id}
-                          className="px-2 py-1 text-xs rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
-                          设为管理员
-                        </button>
                         <button onClick={() => handleToggleStatus(u)} disabled={actionLoading === u.id}
                           className={`px-2 py-1 text-xs rounded-lg border transition-colors disabled:opacity-50 ${
                             u.status === 'BANNED'
