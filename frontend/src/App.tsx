@@ -22,9 +22,6 @@ import TemplateApply from './pages/TemplateApply'
 import Profile from './pages/Profile'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminUsers from './pages/AdminUsers'
-import AdminResumes from './pages/AdminResumes'
-import AdminInterviews from './pages/AdminInterviews'
-import AdminReports from './pages/AdminReports'
 
 /* ── 路由守卫 ── */
 
@@ -93,9 +90,6 @@ function App() {
       {/* 管理员页面（普通用户会被踢走） */}
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-      <Route path="/admin/resumes" element={<AdminRoute><AdminResumes /></AdminRoute>} />
-      <Route path="/admin/interviews" element={<AdminRoute><AdminInterviews /></AdminRoute>} />
-      <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
