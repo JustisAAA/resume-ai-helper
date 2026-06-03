@@ -402,3 +402,168 @@ export default {
   interview: interviewAPI,
   tools: toolsAPI
 };
+
+// ==================== Admin API ====================
+
+export interface AdminStats {
+  userCount: number;
+  resumeCount: number;
+  interviewCount: number;
+  reportCount: number;
+  newUsersToday: number;
+  newResumesToday: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'USER' | 'ADMIN';
+  status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
+  createdAt: string;
+  _count?: {
+    resumes: number;
+    interviews: number;
+    reports: number;
+  };
+}
+
+export interface AdminUserListResponse {
+  users: AdminUser[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export const adminAPI = {
+  /**
+   * 获取系统统计数据
+   */
+  async getStats(token: string): Promise<AdminStats> {
+    const res = await import('axios').then(m => m.default.get(getApiUrl('/admin/stats'), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+    return res.data;
+  },
+
+  /**
+   * 获取用户列表
+   */
+  async getUsers(token: string, params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+  }): Promise<AdminUserListResponse> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+    if (params.search) query.set('search', params.search);
+    if (params.role) query.set('role', params.role);
+    if (params.status) query.set('status', params.status);
+    const res = await import('axios').then(m => m.default.get(getApiUrl(`/admin/users?${query.toString()}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+    return res.data;
+  },
+
+  /**
+   * 更新用户（角色/状态）
+   */
+  async updateUser(token: string, userId: string, data: {
+    role?: 'USER' | 'ADMIN';
+    status?: 'ACTIVE' | 'INACTIVE' | 'BANNED';
+  }): Promise<{ user: AdminUser }> {
+    const res = await import('axios').then(m => m.default.put(getApiUrl(`/admin/users/${userId}`), data, {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+    return res.data;
+  },
+
+  /**
+   * 删除用户
+   */
+  async deleteUser(token: string, userId: string): Promise<void> {
+    await import('axios').then(m => m.default.delete(getApiUrl(`/admin/users/${userId}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+  },
+
+  /**
+   * 获取所有简历列表（管理员）
+   */
+  async getResumes(token: string, params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+  }): Promise<{ resumes: any[]; total: number; page: number; pageSize: number }> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+    if (params.search) query.set('search', params.search);
+    const res = await import('axios').then(m => m.default.get(getApiUrl(`/admin/resumes?${query.toString()}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+    return res.data;
+  },
+
+  /**
+   * 删除简历（管理员）
+   */
+  async deleteResume(token: string, resumeId: string): Promise<void> {
+    await import('axios').then(m => m.default.delete(getApiUrl(`/admin/resumes/${resumeId}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+  },
+
+  /**
+   * 获取所有面试列表（管理员）
+   */
+  async getInterviews(token: string, params: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ interviews: any[]; total: number; page: number; pageSize: number }> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+    const res = await import('axios').then(m => m.default.get(getApiUrl(`/admin/interviews?${query.toString()}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+    return res.data;
+  },
+
+  /**
+   * 删除面试（管理员）
+   */
+  async deleteInterview(token: string, interviewId: string): Promise<void> {
+    await import('axios').then(m => m.default.delete(getApiUrl(`/admin/interviews/${interviewId}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+  },
+
+  /**
+   * 获取所有报告列表（管理员）
+   */
+  async getReports(token: string, params: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ reports: any[]; total: number; page: number; pageSize: number }> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+    const res = await import('axios').then(m => m.default.get(getApiUrl(`/admin/reports?${query.toString()}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+    return res.data;
+  },
+
+  /**
+   * 删除报告（管理员）
+   */
+  async deleteReport(token: string, reportId: string): Promise<void> {
+    await import('axios').then(m => m.default.delete(getApiUrl(`/admin/reports/${reportId}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    }));
+  }
+};

@@ -19,6 +19,11 @@ import ToolsGuide from './pages/ToolsGuide'
 import Templates from './pages/Templates'
 import TemplateApply from './pages/TemplateApply'
 import Profile from './pages/Profile'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminUsers from './pages/AdminUsers'
+import AdminResumes from './pages/AdminResumes'
+import AdminInterviews from './pages/AdminInterviews'
+import AdminReports from './pages/AdminReports'
 
 function App() {
   return (
@@ -43,6 +48,11 @@ function App() {
       <Route path="/templates" element={<Templates />} />
       <Route path="/templates/:id/apply" element={<TemplateApply />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/users" element={<AdminUsers />} />
+      <Route path="/admin/resumes" element={<AdminResumes />} />
+      <Route path="/admin/interviews" element={<AdminInterviews />} />
+      <Route path="/admin/reports" element={<AdminReports />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

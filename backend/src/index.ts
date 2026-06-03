@@ -36,10 +36,12 @@ import authRoutes from './routes/auth';
 import resumeRoutes from './routes/resume';
 import interviewRoutes from './routes/interview';
 import toolsRoutes from './routes/tools';
+import adminRoutes from './routes/admin';
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/tools', toolsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 启动服务器
 app.listen(PORT, () => {
