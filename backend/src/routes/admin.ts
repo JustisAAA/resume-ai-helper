@@ -111,9 +111,15 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req: AuthReques
     const { role, status } = req.body;
     const userId = req.params.id;
 
-    // 不能修改自己
-    if (userId === req.user!.userId) {
-      return res.status(400).json({ error: '不能修改自己的账号状态' });
+    // 检查目标用户
+    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!targetUser) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 不能修改管理员账号（防止误操作导致系统失去管理入口）
+    if (targetUser.role === 'ADMIN') {
+      return res.status(403).json({ error: '系统管理员账号不可修改' });
     }
 
     const updateData: any = {};
@@ -148,15 +154,15 @@ router.delete('/users/:id', authenticateToken, requireAdmin, async (req: AuthReq
   try {
     const userId = req.params.id;
 
-    // 不能删除自己
-    if (userId === req.user!.userId) {
-      return res.status(400).json({ error: '不能删除自己的账号' });
-    }
-
     // 检查用户是否存在
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 不能删除管理员账号（防止误操作导致系统失去管理入口）
+    if (user.role === 'ADMIN') {
+      return res.status(403).json({ error: '系统管理员账号不可删除' });
     }
 
     // 删除用户（级联删除相关数据）

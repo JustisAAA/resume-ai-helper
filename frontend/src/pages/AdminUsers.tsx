@@ -165,24 +165,28 @@ export default function AdminUsers() {
                   <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{u._count?.reports ?? 0}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => handleToggleRole(u)} disabled={actionLoading === u.id}
-                        className="px-2 py-1 text-xs rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
-                        {u.role === 'ADMIN' ? '取消管理员' : '设为管理员'}
-                      </button>
-                      <button onClick={() => handleToggleStatus(u)} disabled={actionLoading === u.id}
-                        className={`px-2 py-1 text-xs rounded-lg border transition-colors disabled:opacity-50 ${
-                          u.status === 'BANNED'
-                            ? 'border-green-200 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                            : 'border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-                        }`}>
-                        {actionLoading === u.id ? '...' : u.status === 'BANNED' ? '解封' : '封禁'}
-                      </button>
-                      <button onClick={() => handleDelete(u)} disabled={actionLoading === u.id}
-                        className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50">
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {u.role === 'ADMIN' ? (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">系统账号</span>
+                    ) : (
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => handleToggleRole(u)} disabled={actionLoading === u.id}
+                          className="px-2 py-1 text-xs rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+                          设为管理员
+                        </button>
+                        <button onClick={() => handleToggleStatus(u)} disabled={actionLoading === u.id}
+                          className={`px-2 py-1 text-xs rounded-lg border transition-colors disabled:opacity-50 ${
+                            u.status === 'BANNED'
+                              ? 'border-green-200 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                              : 'border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          }`}>
+                          {actionLoading === u.id ? '...' : u.status === 'BANNED' ? '解封' : '封禁'}
+                        </button>
+                        <button onClick={() => handleDelete(u)} disabled={actionLoading === u.id}
+                          className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50">
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
