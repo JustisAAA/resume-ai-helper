@@ -109,6 +109,7 @@ model Interview {
   aiRole      AIRole        @default(PROFESSIONAL) @map("ai_role")
   questions   Json          @map("questions") // 问题列表
   answers     Json?         @map("answers") // 回答列表
+  messages    Json?         @map("messages") // 对话消息数组（上下文管理）
   feedback    Json?         @map("feedback") // 反馈信息
   score       Int?          @map("score") // 总分
   status      InterviewStatus @default(CREATED) @map("status")

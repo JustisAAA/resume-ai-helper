@@ -196,7 +196,7 @@ const router = Router();
 // 从API错误中提取可读的错误信息（处理JSON字符串和对象两种情况）
 function extractApiError(error: any, fallback: string): string {
   if (error.response?.data) {
-    let data = error.response.data;
+    let data = error.response?.data;
     if (typeof data === 'string') {
       try {
         data = JSON.parse(data);
@@ -308,7 +308,7 @@ async function callYuanqi(userId: string, prompt: string, timeout = 60000) {
     timeout: timeout
   });
   
-  const content = response.data.choices[0].message.content;
+  const content = (response as any).data.choices[0].message.content;
   return typeof content === 'string' ? content : JSON.stringify(content);
 }
 
@@ -384,7 +384,7 @@ async function embedText(text: string): Promise<number[]> {
       },
       timeout: 30000
     });
-    return response.data.data[0].embedding;
+    return (response as any).data.data[0].embedding;
   } catch (error: any) {
     console.error('Embedding API调用失败:', error?.response?.data || error.message);
     throw error;

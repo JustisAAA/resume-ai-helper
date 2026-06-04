@@ -13,7 +13,7 @@ const router = Router();
 // 从API错误中提取可读的错误信息（处理JSON字符串和对象两种情况）
 function extractApiError(error: any, fallback: string): string {
   if (error.response?.data) {
-    let data = error.response.data;
+    let data = error.response?.data;
     if (typeof data === 'string') {
       try {
         data = JSON.parse(data);
@@ -323,7 +323,7 @@ ${(resume.rawText as string).substring(0, 5000)}
     });
 
     // 解析元器返回的内容
-    const content = response.data.choices[0].message.content;
+    const content = (response as any).data.choices[0].message.content;
     const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/(\{[\s\S]*\})/);
     const jsonStr = jsonMatch ? jsonMatch[1] : content;
     const result = JSON.parse(jsonStr);
@@ -425,7 +425,7 @@ ${(resume.rawText as string).substring(0, 5000)}
     });
     
     // 解析元器返回的内容
-    const content = response.data.choices[0].message.content;
+    const content = (response as any).data.choices[0].message.content;
     const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/(\{[\s\S]*\})/);
     const jsonStr = jsonMatch ? jsonMatch[1] : content;
     const scoreResult = JSON.parse(jsonStr);
@@ -511,7 +511,7 @@ router.post('/:id/apply-template', authMiddleware, async (req: Request, res: Res
       timeout: 120000
     });
 
-    const content = response.data.choices[0].message.content;
+    const content = (response as any).data.choices[0].message.content;
     const htmlMatch = content.match(/```html\n([\s\S]*?)\n```/) || content.match(/<html[\s\S]*<\/html>/i);
     const htmlContent = htmlMatch ? (htmlMatch[1] || htmlMatch[0]) : content;
 

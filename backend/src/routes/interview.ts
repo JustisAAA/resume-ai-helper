@@ -255,17 +255,14 @@ router.post('/:id/start', authMiddleware, async (req: Request, res: Response) =>
       return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
     }
 
-    const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
-      assistant_id: appid,
-      user_id: userId,
-      stream: false,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `【任务：模拟面试-开始】
+    // 初始化消息历史（对话上下文）
+    let messages: any[] = [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: `【任务：模拟面试-开始】
 你是一位${role}，正在进行一场${difficulty}难度的模拟面试，岗位是"${position}"。
 
 ## 面试规则
@@ -279,10 +276,16 @@ ${resumeText.substring(0, 4000)}
 
 ## 输出要求
 请直接输出第一个面试问题，不要有任何前缀、解释或问候语。问题要简洁明了，一针见血。`
-            }
-          ]
-        }
-      ]
+          }
+        ]
+      }
+    ];
+
+    const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
+      assistant_id: appid,
+      user_id: userId,
+      stream: false,
+      messages: messages
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -291,7 +294,7 @@ ${resumeText.substring(0, 4000)}
       timeout: 30000
     });
 
-    let firstQuestion = response.data.choices[0].message.content.trim();
+    let firstQuestion = (response as any).data.choices[0].message.content.trim();
 
     // 如果AI返回了JSON格式（包含next_question字段），提取真正的问题文本
     try {
@@ -311,6 +314,17 @@ ${resumeText.substring(0, 4000)}
     // 清理可能的Markdown代码块标记
     firstQuestion = firstQuestion.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
     
+    // 把AI的回复追加到消息历史
+    messages.push({
+      role: 'assistant',
+      content: [
+        {
+          type: 'text',
+          text: firstQuestion
+        }
+      ]
+    });
+    
     // 更新面试状态
     const updatedInterview = await prisma.interview.update({
       where: { id },
@@ -319,7 +333,8 @@ ${resumeText.substring(0, 4000)}
         startedAt: new Date(),
         questions: [firstQuestion],
         answers: [],
-        feedback: {}
+        feedback: {},
+        messages: messages  // 保存消息历史
       }
     });
     
@@ -417,23 +432,23 @@ router.post('/:id/answer', authMiddleware, async (req: Request, res: Response) =
     
     // 真实模式：调用腾讯元器API评价回答并生成下一个问题
     let score: number, comment: string, highlights: string[], improvements: string[], nextQuestion: string;
-      const appid = process.env.YUANQI_APPID;
-      const appkey = process.env.YUANQI_APPKEY;
-      if (!appid || !appkey) {
-        return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
-      }
-      
-      const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
-        assistant_id: appid,
-        user_id: userId,
-        stream: false,
-        messages: [
+    
+    // 读取消息历史（对话上下文）
+    let messages = (interview.messages as any[]) || [];
+    
+    const appid = process.env.YUANQI_APPID;
+    const appkey = process.env.YUANQI_APPKEY;
+    if (!appid || !appkey) {
+      return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+    }
+    
+    // 构建当前用户消息（包含回答和评估请求）
+    const userMessage = {
+      role: 'user',
+      content: [
         {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `【任务：模拟面试-评估回答】你是一位${interview.aiRole === 'STRICT' ? '严厉挑剔、追求完美的资深' : interview.aiRole === 'FRIENDLY' ? '友好温和、鼓励性的' : '专业严谨、注重细节的'}面试官。
+          type: 'text',
+          text: `【任务：模拟面试-评估回答】你是一位${interview.aiRole === 'STRICT' ? '严厉挑剔、追求完美的资深' : interview.aiRole === 'FRIENDLY' ? '友好温和、鼓励性的' : '专业严谨、注重细节的'}面试官。
 
 ## 当前面试信息
 - 岗位：${interview.position || '通用'}
@@ -476,10 +491,18 @@ ${answer}
 - highlights和improvements数组要具体，不要泛泛而谈
 - next_question要有深度，能继续考察候选人
 - 不要输出JSON以外的任何内容`
-            }
-          ]
         }
       ]
+    };
+    
+    // 追加当前用户消息到消息历史
+    messages.push(userMessage);
+    
+    const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
+      assistant_id: appid,
+      user_id: userId,
+      stream: false,
+      messages: messages
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -489,7 +512,7 @@ ${answer}
     });
     
     // 解析AI返回
-    const content = response.data.choices[0].message.content;
+    const content = (response as any).data.choices[0].message.content;
     let evaluation;
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -500,6 +523,17 @@ ${answer}
     } catch (e) {
       evaluation = { score: 5, comment: '评价解析失败', highlights: [], improvements: [], next_question: '' };
     }
+    
+    // 把AI的回复追加到消息历史
+    messages.push({
+      role: 'assistant',
+      content: [
+        {
+          type: 'text',
+          text: content  // AI 返回的原始内容
+        }
+      ]
+    });
     
     // 保存回答和评价
     const newAnswer = {
@@ -522,7 +556,8 @@ ${answer}
     // 更新面试
     const updateData: any = {
       answers,
-      questions
+      questions,
+      messages  // 保存消息历史
     };
     
     // 如果面试结束（没有下一个问题）
@@ -763,7 +798,7 @@ ${interviewHistory}
     });
     
     // 解析AI返回的报告
-    const content = response.data.choices[0].message.content;
+    const content = (response as any).data.choices[0].message.content;
     let report;
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
