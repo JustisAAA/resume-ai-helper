@@ -530,7 +530,7 @@ ${answer}
       content: [
         {
           type: 'text',
-          text: content  // AI 返回的原始内容
+          text: evaluation.next_question  // 下一个问题文本
         }
       ]
     });
