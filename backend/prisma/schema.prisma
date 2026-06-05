@@ -12,6 +12,7 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  ENTERPRISE // 新增：企业角色
 }
 
 enum Status {
@@ -55,93 +56,172 @@ enum ReportType {
   COMPREHENSIVE
 }
 
+// 新增：职位状态枚举
+enum JobStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+}
+
+// 新增：申请状态枚举
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+}
+
 // 用户模型
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique @map("email")
-  passwordHash String   @map("password_hash")
-  name        String?  @map("name")
-  avatar      String?  @map("avatar")
-  role        Role     @default(USER) @map("role")
-  status      Status   @default(ACTIVE) @map("status")
-  resumes     Resume[]
-  interviews  Interview[]
-  reports     Report[]
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String        @id @default(uuid())
+  email        String        @unique @map("email")
+  passwordHash String        @map("password_hash")
+  name         String?       @map("name")
+  avatar       String?       @map("avatar")
+  role         Role          @default(USER) @map("role")
+  status       Status        @default(ACTIVE) @map("status")
+  resumes      Resume[]
+  interviews   Interview[]
+  reports      Report[]
+  enterprise   Enterprise? // 新增：企业关联
+  applications Application[] // 新增：申请关联
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
 
   @@map("users")
 }
 
 // 简历模型
 model Resume {
-  id          String        @id @default(uuid())
-  userId      String        @map("user_id")
-  title       String        @map("title")
-  content     Json?         @map("content") // 简历内容（JSON格式）
+  id           String        @id @default(uuid())
+  userId       String        @map("user_id")
+  title        String        @map("title")
+  content      Json?         @map("content") // 简历内容（JSON格式）
   rawText      String?       @map("raw_text") // 原始文本
-  fileName    String?       @map("file_name") // 原始文件名
-  fileUrl     String?       @map("file_url") // 文件URL
-  fileType    String?       @map("file_type") // 文件类型（pdf, docx）
-  analysis    Json?         @map("analysis") // 分析结果
-  score       Int?          @map("score") // 评分（0-100）
-  analyzedAt  DateTime?     @map("analyzed_at") // 分析时间
-  status      ResumeStatus  @default(DRAFT) @map("status")
-  isDefault   Boolean       @default(false) @map("is_default")
-  interviews  Interview[]
-  reports     Report[]
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  user        User          @relation(fields: [userId], references: [id])
+  fileName     String?       @map("file_name") // 原始文件名
+  fileUrl      String?       @map("file_url") // 文件URL
+  fileType     String?       @map("file_type") // 文件类型（pdf, docx）
+  analysis     Json?         @map("analysis") // 分析结果
+  score        Int?          @map("score") // 评分（0-100）
+  analyzedAt   DateTime?     @map("analyzed_at") // 分析时间
+  status       ResumeStatus  @default(DRAFT) @map("status")
+  isDefault    Boolean       @default(false) @map("is_default")
+  interviews   Interview[]
+  reports      Report[]
+  applications Application[] // 新增：申请关联
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  user         User          @relation(fields: [userId], references: [id])
 
   @@map("resumes")
 }
 
 // 面试模型
 model Interview {
-  id          String        @id @default(uuid())
-  userId      String        @map("user_id")
-  resumeId    String?       @map("resume_id")
-  title       String        @map("title")
-  position    String?       @map("position") // 岗位
-  difficulty  Difficulty    @default(MEDIUM) @map("difficulty")
-  language    Language      @default(ZH_CN) @map("language")
-  aiRole      AIRole        @default(PROFESSIONAL) @map("ai_role")
-  questions   Json          @map("questions") // 问题列表
-  answers     Json?         @map("answers") // 回答列表
-  messages    Json?         @map("messages") // 对话消息数组（上下文管理）
-  feedback    Json?         @map("feedback") // 反馈信息
-  score       Int?          @map("score") // 总分
+  id          String          @id @default(uuid())
+  userId      String          @map("user_id")
+  resumeId    String?         @map("resume_id")
+  title       String          @map("title")
+  position    String?         @map("position") // 岗位
+  difficulty  Difficulty      @default(MEDIUM) @map("difficulty")
+  language    Language        @default(ZH_CN) @map("language")
+  aiRole      AIRole          @default(PROFESSIONAL) @map("ai_role")
+  questions   Json            @map("questions") // 问题列表
+  answers     Json?           @map("answers") // 回答列表
+  messages    Json?           @map("messages") // 对话消息数组（上下文管理）
+  feedback    Json?           @map("feedback") // 反馈信息
+  score       Int?            @map("score") // 总分
   status      InterviewStatus @default(CREATED) @map("status")
-  startedAt   DateTime?     @map("started_at")
-  completedAt DateTime?     @map("completed_at")
-  reportId    String?       @unique @map("report_id")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  user        User          @relation(fields: [userId], references: [id])
-  resume      Resume?       @relation(fields: [resumeId], references: [id])
-  report      Report?       @relation
+  startedAt   DateTime?       @map("started_at")
+  completedAt DateTime?       @map("completed_at")
+  reportId    String?         @unique @map("report_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  user        User            @relation(fields: [userId], references: [id])
+  resume      Resume?         @relation(fields: [resumeId], references: [id])
+  report      Report?         @relation
 
   @@map("interviews")
 }
 
 // 报告模型
 model Report {
-  id          String      @id @default(uuid())
-  userId      String      @map("user_id")
-  resumeId    String?     @map("resume_id")
-  interviewId String?     @unique @map("interview_id")
-  type        ReportType  @map("type")
-  title       String      @map("title")
-  content     Json        @map("content") // 报告内容
-  summary     String      @map("summary") // 摘要
-  score       Int?        @map("score") // 评分
-  recommendations Json?   @map("recommendations") // 建议
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  user        User        @relation(fields: [userId], references: [id])
-  resume      Resume?     @relation(fields: [resumeId], references: [id])
-  interview   Interview?  @relation(fields: [interviewId], references: [id])
+  id              String     @id @default(uuid())
+  userId          String     @map("user_id")
+  resumeId        String?    @map("resume_id")
+  interviewId     String?    @unique @map("interview_id")
+  type            ReportType @map("type")
+  title           String     @map("title")
+  content         Json       @map("content") // 报告内容
+  summary         String     @map("summary") // 摘要
+  score           Int?       @map("score") // 评分
+  recommendations Json?      @map("recommendations") // 建议
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  user            User       @relation(fields: [userId], references: [id])
+  resume          Resume?    @relation(fields: [resumeId], references: [id])
+  interview       Interview? @relation(fields: [interviewId], references: [id])
 
   @@map("reports")
+}
+
+// 新增：企业模型
+model Enterprise {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  name         String   @map("name")
+  description  String?  @map("description")
+  logo         String?  @map("logo")
+  website      String?  @map("website")
+  industry     String?  @map("industry")
+  size         String?  @map("size")
+  location     String?  @map("location")
+  contactEmail String?  @map("contact_email")
+  contactPhone String?  @map("contact_phone")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User  @relation(fields: [userId], references: [id])
+  jobs Job[]
+
+  @@map("enterprises")
+}
+
+// 新增：职位模型
+model Job {
+  id           String    @id @default(uuid())
+  enterpriseId String    @map("enterprise_id")
+  title        String    @map("title")
+  description  String    @map("description")
+  requirements String?   @map("requirements")
+  salaryRange  String?   @map("salary_range")
+  location     String?   @map("location")
+  type         String?   @map("type")
+  status       JobStatus @default(ACTIVE) @map("status")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  enterprise   Enterprise    @relation(fields: [enterpriseId], references: [id])
+  applications Application[]
+
+  @@map("jobs")
+}
+
+// 新增：申请模型
+model Application {
+  id          String            @id @default(uuid())
+  jobId       String            @map("job_id")
+  userId      String            @map("user_id")
+  resumeId    String?           @map("resume_id")
+  status      ApplicationStatus @default(PENDING) @map("status")
+  coverLetter String?           @map("cover_letter")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  job    Job     @relation(fields: [jobId], references: [id])
+  user   User    @relation(fields: [userId], references: [id])
+  resume Resume? @relation(fields: [resumeId], references: [id])
+
+  @@unique([jobId, userId])
+  @@map("applications")
 }

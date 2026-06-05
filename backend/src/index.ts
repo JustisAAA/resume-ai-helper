@@ -37,11 +37,15 @@ import resumeRoutes from './routes/resume';
 import interviewRoutes from './routes/interview';
 import toolsRoutes from './routes/tools';
 import adminRoutes from './routes/admin';
+import enterpriseRoutes from './routes/enterprise';
+import jobRoutes from './routes/job';
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/tools', toolsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/enterprise', enterpriseRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // 启动服务器
 app.listen(PORT, () => {

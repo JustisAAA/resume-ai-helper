@@ -491,3 +491,218 @@ export const adminAPI = {
     }));
   }
 };
+
+// ==================== Enterprise API ====================
+
+export interface EnterpriseRegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  industry?: string;
+  size?: string;
+  location?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+export interface EnterpriseLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface EnterpriseAuthResponse {
+  token: string;
+  enterprise: {
+    id: string;
+    name: string;
+    description?: string;
+    logo?: string;
+    website?: string;
+    industry?: string;
+    size?: string;
+    location?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+  };
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+}
+
+export interface Enterprise {
+  id: string;
+  name: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  industry?: string;
+  size?: string;
+  location?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const enterpriseAPI = {
+  /**
+   * 企业注册
+   */
+  async register(data: EnterpriseRegisterRequest): Promise<EnterpriseAuthResponse> {
+    const res = await axios.post(getApiUrl('/enterprise/register'), data);
+    return res.data;
+  },
+
+  /**
+   * 企业登录
+   */
+  async login(data: EnterpriseLoginRequest): Promise<EnterpriseAuthResponse> {
+    const res = await axios.post(getApiUrl('/enterprise/login'), data);
+    return res.data;
+  },
+
+  /**
+   * 获取企业资料
+   */
+  async getProfile(token: string): Promise<{ enterprise: Enterprise }> {
+    const res = await axios.get(getApiUrl('/enterprise/profile'), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  /**
+   * 更新企业资料
+   */
+  async updateProfile(token: string, data: Partial<EnterpriseRegisterRequest>): Promise<{ enterprise: Enterprise }> {
+    const res = await axios.put(getApiUrl('/enterprise/profile'), data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  }
+};
+
+// ==================== Job API ====================
+
+export interface JobCreateRequest {
+  title: string;
+  description: string;
+  requirements?: string;
+  salaryRange?: string;
+  location?: string;
+  type?: string;
+}
+
+export interface JobUpdateRequest {
+  title?: string;
+  description?: string;
+  requirements?: string;
+  salaryRange?: string;
+  location?: string;
+  type?: string;
+  status?: 'ACTIVE' | 'CLOSED' | 'DRAFT';
+}
+
+export interface Job {
+  id: string;
+  enterpriseId: string;
+  title: string;
+  description: string;
+  requirements?: string;
+  salaryRange?: string;
+  location?: string;
+  type?: string;
+  status: 'ACTIVE' | 'CLOSED' | 'DRAFT';
+  createdAt: string;
+  updatedAt: string;
+  enterprise?: {
+    id: string;
+    name: string;
+    logo?: string;
+  };
+  _count?: {
+    applications: number;
+  };
+  applications?: Array<{
+    id: string;
+    status: string;
+    user: {
+      id: string;
+      name?: string;
+      email: string;
+      avatar?: string;
+    };
+    resume?: {
+      id: string;
+      title: string;
+      score?: number;
+    };
+  }>;
+}
+
+export const jobAPI = {
+  /**
+   * 创建职位
+   */
+  async create(token: string, data: JobCreateRequest): Promise<{ job: Job }> {
+    const res = await axios.post(getApiUrl('/jobs'), data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  /**
+   * 获取职位列表
+   */
+  async list(params?: { enterpriseId?: string; status?: string }): Promise<{ jobs: Job[] }> {
+    const query = new URLSearchParams();
+    if (params?.enterpriseId) query.set('enterpriseId', params.enterpriseId);
+    if (params?.status) query.set('status', params.status);
+    const res = await axios.get(getApiUrl(`/jobs?${query.toString()}`));
+    return res.data;
+  },
+
+  /**
+   * 获取职位详情
+   */
+  async getDetail(id: string): Promise<{ job: Job }> {
+    const res = await axios.get(getApiUrl(`/jobs/${id}`));
+    return res.data;
+  },
+
+  /**
+   * 更新职位
+   */
+  async update(token: string, id: string, data: JobUpdateRequest): Promise<{ job: Job }> {
+    const res = await axios.put(getApiUrl(`/jobs/${id}`), data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  /**
+   * 删除职位
+   */
+  async delete(token: string, id: string): Promise<void> {
+    await axios.delete(getApiUrl(`/jobs/${id}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  /**
+   * 更新职位状态
+   */
+  async updateStatus(token: string, id: string, status: 'ACTIVE' | 'CLOSED' | 'DRAFT'): Promise<{ job: Job }> {
+    const res = await axios.patch(getApiUrl(`/jobs/${id}/status`), { status }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  }
+};

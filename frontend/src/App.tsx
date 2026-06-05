@@ -1,27 +1,35 @@
 import type { JSX } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import Register from './pages/Register'
-import Login from './pages/Login'
-import Home from './pages/Home'
-import Dashboard from './pages/Dashboard'
-import ResumeList from './pages/ResumeList'
-import ResumeUpload from './pages/ResumeUpload'
-import ResumeDetail from './pages/ResumeDetail'
-import InterviewList from './pages/InterviewList'
-import InterviewNew from './pages/InterviewNew'
-import InterviewRoom from './pages/InterviewRoom'
-import InterviewReport from './pages/InterviewReport'
-import ReportCenter from './pages/ReportCenter'
-import ToolsOptimize from './pages/ToolsOptimize'
-import ToolsMatch from './pages/ToolsMatch'
-import ToolsQuestions from './pages/ToolsQuestions'
-import ToolsScore from './pages/ToolsScore'
-import ToolsGuide from './pages/ToolsGuide'
-import Templates from './pages/Templates'
-import TemplateApply from './pages/TemplateApply'
-import Profile from './pages/Profile'
-import AdminDashboard from './pages/AdminDashboard'
-import AdminUsers from './pages/AdminUsers'
+import { lazy, Suspense } from 'react'
+
+/* ── 懒加载页面组件 ── */
+const Home = lazy(() => import('./pages/Home'))
+const Register = lazy(() => import('./pages/Register'))
+const Login = lazy(() => import('./pages/Login'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const ResumeList = lazy(() => import('./pages/ResumeList'))
+const ResumeUpload = lazy(() => import('./pages/ResumeUpload'))
+const ResumeDetail = lazy(() => import('./pages/ResumeDetail'))
+const InterviewList = lazy(() => import('./pages/InterviewList'))
+const InterviewNew = lazy(() => import('./pages/InterviewNew'))
+const InterviewRoom = lazy(() => import('./pages/InterviewRoom'))
+const InterviewReport = lazy(() => import('./pages/InterviewReport'))
+const ReportCenter = lazy(() => import('./pages/ReportCenter'))
+const ToolsOptimize = lazy(() => import('./pages/ToolsOptimize'))
+const ToolsMatch = lazy(() => import('./pages/ToolsMatch'))
+const ToolsQuestions = lazy(() => import('./pages/ToolsQuestions'))
+const ToolsScore = lazy(() => import('./pages/ToolsScore'))
+const ToolsGuide = lazy(() => import('./pages/ToolsGuide'))
+const Templates = lazy(() => import('./pages/Templates'))
+const TemplateApply = lazy(() => import('./pages/TemplateApply'))
+const Profile = lazy(() => import('./pages/Profile'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const AdminUsers = lazy(() => import('./pages/AdminUsers'))
+const EnterpriseLogin = lazy(() => import('./pages/EnterpriseLogin'))
+const EnterpriseRegister = lazy(() => import('./pages/EnterpriseRegister'))
+const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'))
+const EnterpriseJobs = lazy(() => import('./pages/EnterpriseJobs'))
+const EnterpriseJobEdit = lazy(() => import('./pages/EnterpriseJobEdit'))
 
 /* ── 路由守卫 ── */
 
@@ -49,17 +57,26 @@ function AdminRoute({ children }: { children: JSX.Element }) {
   return children
 }
 
+/** 企业路由：非企业用户或未登录重定向 */
+function EnterpriseRoute({ children }: { children: JSX.Element }) {
+  const user = getUser()
+  if (!user) return <Navigate to="/enterprise/login" replace />
+  if (user.role !== 'ENTERPRISE') return <Navigate to="/enterprise/login" replace />
+  return children
+}
+
 /** 已登录路由：已登录用户访问登录/注册页自动跳转 */
 function GuestRoute({ children }: { children: JSX.Element }) {
   const user = getUser()
   if (user) {
-    return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/dashboard'} replace />
+    return <Navigate to={user.role === 'ADMIN' ? '/admin' : user.role === 'ENTERPRISE' ? '/enterprise/dashboard' : '/dashboard'} replace />
   }
   return children
 }
 
 function App() {
   return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">加载中...</div>}>
     <Routes>
       {/* 公开页面 */}
       <Route path="/" element={<Home />} />
@@ -91,8 +108,17 @@ function App() {
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
 
+      {/* 企业页面（普通用户会被踢走） */}
+      <Route path="/enterprise/login" element={<GuestRoute><EnterpriseLogin /></GuestRoute>} />
+      <Route path="/enterprise/register" element={<GuestRoute><EnterpriseRegister /></GuestRoute>} />
+      <Route path="/enterprise/dashboard" element={<EnterpriseRoute><EnterpriseDashboard /></EnterpriseRoute>} />
+      <Route path="/enterprise/jobs" element={<EnterpriseRoute><EnterpriseJobs /></EnterpriseRoute>} />
+      <Route path="/enterprise/jobs/new" element={<EnterpriseRoute><EnterpriseJobEdit /></EnterpriseRoute>} />
+      <Route path="/enterprise/jobs/:id/edit" element={<EnterpriseRoute><EnterpriseJobEdit /></EnterpriseRoute>} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }
 

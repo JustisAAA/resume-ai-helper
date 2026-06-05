@@ -71,3 +71,22 @@ export function requireAdmin(
 
   next();
 }
+
+/**
+ * 企业权限中间件：必须在 authenticateToken 之后使用
+ */
+export function requireEnterprise(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user) {
+    return res.status(401).json({ error: '未登录' });
+  }
+
+  if (req.user.role !== 'ENTERPRISE') {
+    return res.status(403).json({ error: '权限不足，需要企业权限' });
+  }
+
+  next();
+}
