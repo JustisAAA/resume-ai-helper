@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { jobAPI } from '../services/api'
+import { PencilIcon, TrashIcon, BriefcaseIcon } from '@heroicons/react/24/outline'
 
 export default function EnterpriseJobs() {
   const navigate = useNavigate()
@@ -131,9 +132,7 @@ export default function EnterpriseJobs() {
 
         {jobs.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
+            <BriefcaseIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">暂无职位</h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">开始发布你的第一个职位吧</p>
             <div className="mt-6">
@@ -191,14 +190,16 @@ export default function EnterpriseJobs() {
                         </select>
                         <button
                           onClick={() => navigate(`/enterprise/jobs/${job.id}/edit`)}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          className="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                         >
+                          <PencilIcon className="w-4 h-4 mr-1" />
                           编辑
                         </button>
                         <button
                           onClick={() => handleDelete(job.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          className="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                         >
+                          <TrashIcon className="w-4 h-4 mr-1" />
                           删除
                         </button>
                       </div>
