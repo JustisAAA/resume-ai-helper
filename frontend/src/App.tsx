@@ -13,6 +13,7 @@ const ResumeDetail = lazy(() => import('./pages/ResumeDetail'))
 const InterviewList = lazy(() => import('./pages/InterviewList'))
 const InterviewNew = lazy(() => import('./pages/InterviewNew'))
 const InterviewRoom = lazy(() => import('./pages/InterviewRoom'))
+const InterviewGuide = lazy(() => import('./pages/InterviewGuide'))
 const InterviewReport = lazy(() => import('./pages/InterviewReport'))
 const ReportCenter = lazy(() => import('./pages/ReportCenter'))
 const ToolsOptimize = lazy(() => import('./pages/ToolsOptimize'))
@@ -96,6 +97,7 @@ function App() {
       <Route path="/resumes/:id" element={<UserRoute><ResumeDetail /></UserRoute>} />
       <Route path="/interviews" element={<UserRoute><InterviewList /></UserRoute>} />
       <Route path="/interviews/new" element={<UserRoute><InterviewNew /></UserRoute>} />
+      <Route path="/interviews/:id/guide" element={<UserRoute><InterviewGuide /></UserRoute>} />
       <Route path="/interviews/:id/room" element={<UserRoute><InterviewRoom /></UserRoute>} />
       <Route path="/interviews/:id/report" element={<UserRoute><InterviewReport /></UserRoute>} />
       <Route path="/reports" element={<UserRoute><ReportCenter /></UserRoute>} />

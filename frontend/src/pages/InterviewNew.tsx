@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useTheme } from '../context/ThemeContext'
 import { interviewAPI, resumeAPI } from '../services/api'
+import { interviewSchema, type InterviewFormData } from '../schemas/interviewSchema'
 
 interface Resume {
   id: string
@@ -11,13 +14,36 @@ interface Resume {
 
 export default function InterviewNew() {
   const [resumes, setResumes] = useState<Resume[]>([])
-  const [selectedResumeId, setSelectedResumeId] = useState('')
-  const [position, setPosition] = useState('')
-  const [difficulty, setDifficulty] = useState('MEDIUM')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
   const { dark, toggleTheme } = useTheme()
+
+  const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<InterviewFormData>({
+    resolver: zodResolver(interviewSchema),
+    defaultValues: { resumeId: '', position: '', difficulty: 'MEDIUM' },
+  })
+
+  const onSubmit = async (data: InterviewFormData) => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const token = localStorage.getItem('token')
+      const res = await interviewAPI.create(token!, {
+        resumeId: data.resumeId,
+        title: `${data.position}模拟面试`,
+        position: data.position,
+        difficulty: data.difficulty
+      })
+      navigate(`/interviews/${res.id}/guide`)
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || '创建面试失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => { fetchResumes() }, [])
 
@@ -26,36 +52,13 @@ export default function InterviewNew() {
       const token = localStorage.getItem('token')
       const data = await resumeAPI.list(token!) as unknown as Resume[];
       setResumes(data)
-      if (data.length > 0) setSelectedResumeId(data[0].id)
+      if (data.length > 0) {
+        // Set default resumeId if not set
+      }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
       const msg = error.response?.data?.error || '获取简历列表失败';
       setError(msg);
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedResumeId) { setError('请选择简历'); return }
-    if (!position.trim()) { setError('请输入目标岗位'); return }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const token = localStorage.getItem('token')
-      const res = await interviewAPI.create(token!, {
-        resumeId: selectedResumeId,
-        title: `${position}模拟面试`,
-        position: position.trim(),
-        difficulty
-      })
-      navigate(`/interviews/${res.id}/room`)
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || '创建面试失败')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -126,7 +129,7 @@ export default function InterviewNew() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* 选择简历 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">选择简历 *</label>
@@ -139,10 +142,8 @@ export default function InterviewNew() {
                 </div>
               ) : (
                 <select
-                  value={selectedResumeId}
-                  onChange={e => setSelectedResumeId(e.target.value)}
+                  {...register('resumeId')}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition"
-                  required
                 >
                   <option value="">请选择简历...</option>
                   {resumes.map(r => (
@@ -152,6 +153,9 @@ export default function InterviewNew() {
                   ))}
                 </select>
               )}
+              {errors.resumeId && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.resumeId.message}</p>
+              )}
             </div>
 
             {/* 目标岗位 */}
@@ -159,12 +163,13 @@ export default function InterviewNew() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">目标岗位 *</label>
               <input
                 type="text"
-                value={position}
-                onChange={e => setPosition(e.target.value)}
+                {...register('position')}
                 placeholder="例如：前端工程师、产品经理、数据分析师"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition"
-                required
               />
+              {errors.position && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.position.message}</p>
+              )}
             </div>
 
             {/* 面试难度 */}
@@ -172,7 +177,7 @@ export default function InterviewNew() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">面试难度</label>
               <div className="grid grid-cols-3 gap-3">
                 {difficultyOptions.map(opt => {
-                  const isSelected = difficulty === opt.value
+                  const isSelected = watch('difficulty') === opt.value
                   const colorMap: Record<string, { border: string; bg: string; ring: string; text: string }> = {
                     green: { border: 'border-green-400', bg: 'bg-green-50 dark:bg-green-900/30', ring: 'ring-green-200 dark:ring-green-800', text: 'text-green-700 dark:text-green-300' },
                     yellow: { border: 'border-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/30', ring: 'ring-yellow-200 dark:ring-yellow-800', text: 'text-yellow-700 dark:text-yellow-300' },
@@ -182,7 +187,10 @@ export default function InterviewNew() {
                   return (
                     <div
                       key={opt.value}
-                      onClick={() => setDifficulty(opt.value)}
+                      onClick={() => {
+                        setValue('difficulty', opt.value as 'EASY' | 'MEDIUM' | 'HARD')
+                        trigger('difficulty')
+                      }}
                       className={`
                         cursor-pointer rounded-xl border-2 p-4 text-center transition-all duration-200
                         ${isSelected ? `${c.border} ${c.bg} ring-2 ${c.ring}` : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'}
@@ -196,6 +204,9 @@ export default function InterviewNew() {
                   )
                 })}
               </div>
+              {errors.difficulty && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.difficulty.message}</p>
+              )}
             </div>
 
             <button

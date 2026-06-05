@@ -270,6 +270,7 @@ export default function InterviewReport() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
+  const [progress, setProgress] = useState<{ step: string; percent: number; message: string }>({ step: '', percent: 0, message: '' })
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set())
   const reportRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -308,14 +309,17 @@ export default function InterviewReport() {
 
   const generateReport = async () => {
     setGenerating(true)
+    setProgress({ step: '', percent: 0, message: '' })
     try {
       const token = localStorage.getItem('token')
-      const res = await interviewAPI.generateReport(token!, id!) as unknown as { report: ReportData; interview: InterviewData }
+      const res = await interviewAPI.generateReport(token!, id!, (progress) => {
+        setProgress(progress)
+      }) as unknown as { report: ReportData; interview: InterviewData }
       setReport(res.report)
       setInterview(calcDuration(res.interview))
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || '生成报告失败')
+      const error = err as { message?: string };
+      setError(error.message || '生成报告失败')
     } finally {
       setGenerating(false)
       setLoading(false)
@@ -330,6 +334,15 @@ export default function InterviewReport() {
       else next.add(index)
       return next
     })
+  }
+
+  const handleToggleAll = () => {
+    const total = questionReviews.length > 0 ? questionReviews.length : answers.length
+    if (expandedQuestions.size === total) {
+      setExpandedQuestions(new Set())
+    } else {
+      setExpandedQuestions(new Set(Array.from({ length: total }, (_, i) => i)))
+    }
   }
 
   const getPassLabel = (score: number) => {
@@ -484,7 +497,14 @@ export default function InterviewReport() {
           .min-h-screen { min-height: auto !important; }
           .bg-gradient-to-br { background: #4f46e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .rounded-3xl, .rounded-2xl { border-radius: 12px !important; box-shadow: none !important; border: 1px solid #e5e7eb !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12pt; line-height: 1.5; }
+          h1, h2, h3 { page-break-after: avoid; }
+          table, figure { page-break-inside: avoid; }
+          #score-hero { page-break-after: always; }
+          #dimension-analysis { page-break-before: always; }
+          #question-reviews { page-break-before: always; }
+          #suggestions { page-break-before: always; }
+          #final-advice { page-break-before: always; }
         }
       `}</style>
 
@@ -531,15 +551,56 @@ export default function InterviewReport() {
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-        <ScoreHero overallScore={overallScore} interview={interview} avgScore={avgScore} passInfo={passInfo} />
-        <DimensionSection radarData={radarData} />
-        <StatsSection stats={interviewStats} actualDuration={interview.duration} />
+        <div id="score-hero">
+          <ScoreHero overallScore={overallScore} interview={interview} avgScore={avgScore} passInfo={passInfo} />
+        </div>
+
+        {/* 报告目录 */}
+        <section className="mb-8 no-print">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">📋</span>
+              报告目录
+            </h2>
+            <nav className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { id: 'score-hero', label: '总分概览', icon: '📊' },
+                { id: 'dimension-analysis', label: '能力维度分析', icon: '📊' },
+                { id: 'interview-stats', label: '面试数据统计', icon: '📈' },
+                { id: 'question-reviews', label: '各题回顾', icon: '📝' },
+                { id: 'suggestions', label: '综合建议', icon: '💡' },
+                { id: 'final-advice', label: 'AI最终建议', icon: '🎯' },
+              ].map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors group"
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-indigo-700 dark:group-hover:text-indigo-400">
+                    {item.label}
+                  </span>
+                </a>
+              ))}
+            </nav>
+          </div>
+        </section>
+
+        <div id="dimension-analysis">
+          <DimensionSection radarData={radarData} />
+        </div>
+        <div id="interview-stats">
+          <StatsSection stats={interviewStats} actualDuration={interview.duration} />
+        </div>
 
         {/* 各题回顾 */}
-        <section className="mb-8">
+        <section id="question-reviews" className="mb-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm">📝</span>
             各题回顾
+            <button onClick={handleToggleAll} className="ml-auto text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-normal">
+              {expandedQuestions.size === (questionReviews.length > 0 ? questionReviews.length : answers.length) ? '收起全部' : '展开全部'}
+            </button>
           </h2>
           <div className="space-y-4">
             {(questionReviews.length > 0 ? questionReviews : answers).map((item: QuestionReviewType | AnswerData, index: number) => {
@@ -556,11 +617,13 @@ export default function InterviewReport() {
           </div>
         </section>
 
-        <SuggestionSection strengths={strengths} improvements={improvements} />
+        <div id="suggestions">
+          <SuggestionSection strengths={strengths} improvements={improvements} />
+        </div>
 
         {/* 最终建议 */}
         {report?.final_advice && (
-          <section className="mb-8">
+          <section id="final-advice" className="mb-8">
             <div className={`rounded-2xl p-6 sm:p-8 border border-indigo-100 dark:border-indigo-800 ${dark ? 'bg-gray-900' : 'bg-gradient-to-br from-indigo-50 to-purple-50'}`}>
               <h2 className="text-xl font-bold text-indigo-900 dark:text-indigo-300 mb-4 flex items-center gap-2">
                 <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343 5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548-.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>

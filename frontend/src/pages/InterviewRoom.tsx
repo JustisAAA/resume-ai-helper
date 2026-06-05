@@ -1,8 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useTheme } from '../context/ThemeContext'
 import { interviewAPI, Interview } from '../services/api'
 import { getApiBaseUrl } from '../utils/api'
+import { answerSchema, type AnswerFormData } from '../schemas/answerSchema'
 
 export default function InterviewRoom() {
   const { id } = useParams<{ id: string }>()
@@ -12,6 +15,14 @@ export default function InterviewRoom() {
   const [currentQuestion, setCurrentQuestion] = useState('')
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AnswerFormData>({
+    resolver: zodResolver(answerSchema),
+    defaultValues: { answer: '' },
+  })
+  // Synchronize answer state with react-hook-form
+  useEffect(() => {
+    setValue('answer', answer)
+  }, [answer, setValue])
   const [chatHistory, setChatHistory] = useState<Array<{ role: string; content: string; score?: number; comment?: string; highlights?: string[]; improvements?: string[] }>>([])
   const [interviewEnded, setInterviewEnded] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
@@ -132,7 +143,11 @@ export default function InterviewRoom() {
         }
       }
       if (finalTranscript) {
-        setAnswer(prev => prev + finalTranscript);
+        setAnswer(prev => {
+          const newAnswer = prev + finalTranscript;
+          setValue('answer', newAnswer);
+          return newAnswer;
+        });
       }
     };
     
@@ -281,15 +296,14 @@ export default function InterviewRoom() {
     }
   }
 
-  const handleSubmitAnswer = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!answer.trim() || submitting) return
+  const onSubmitAnswer = async (data: AnswerFormData) => {
+    const userAnswer = data.answer.trim()
     // 停止当前语音播放，防止AI还在读上一题
     stopSpeaking()
     // 设置标志位：刚刚提交答案，useEffect 中不要重复播放
     justSubmittedRef.current = true
-    const userAnswer = answer.trim()
     setAnswer('')
+    setValue('answer', '')
     setSubmitting(true)
     setError('')
     setChatHistory(prev => [...prev, { role: 'candidate', content: userAnswer }])
@@ -331,6 +345,7 @@ export default function InterviewRoom() {
     } catch (err: unknown) {
       setError(extractErrorMessage(err) || '提交回答失败')
       setAnswer(userAnswer)
+      setValue('answer', userAnswer)
     } finally {
       setSubmitting(false)
     }
@@ -357,6 +372,39 @@ export default function InterviewRoom() {
   const totalQuestions = chatHistory.filter(m => m.role === 'interviewer').length || (interview?.questions?.length || 0)
   const answeredCount = chatHistory.filter(m => m.role === 'candidate').length
   const progressPercent = totalQuestions > 0 ? Math.min(Math.round((answeredCount / totalQuestions) * 100), 100) : 0
+
+  // 实时提示：根据当前问题生成上下文相关提示
+  const getContextualTip = (question: string): string => {
+    if (!question) return '请认真阅读题目，清晰表达自己的想法。'
+    if (question.includes('项目') || question.includes('经验') || question.includes('介绍')) {
+      return '💡 提示：请详细描述项目经验，包括技术栈、你的角色、遇到的挑战和解决方案。'
+    }
+    if (question.includes('团队') || question.includes('协作') || question.includes('沟通')) {
+      return '💡 提示：可以举例说明团队合作的经验，展现你的沟通和协作能力。'
+    }
+    if (question.includes('解决') || question.includes('难题') || question.includes('挑战')) {
+      return '💡 提示：使用STAR法则：情境(Situation)→任务(Task)→行动(Action)→结果(Result)。'
+    }
+    if (question.includes('优点') || question.includes('优势') || question.includes('擅长')) {
+      return '💡 提示：结合具体案例说明你的优势，避免空泛的描述。'
+    }
+    if (question.includes('缺点') || question.includes('不足') || question.includes('改进')) {
+      return '💡 提示：诚实面对不足，但也要说明你正在如何改进。'
+    }
+    if (question.includes('职业规划') || question.includes('未来') || question.includes('目标')) {
+      return '💡 提示：结合岗位和公司发展，说明你的短期和长期规划。'
+    }
+    return '💡 提示：先给出结论，再展开说明，让面试官快速抓住重点。'
+  }
+
+  const [currentTip, setCurrentTip] = useState(() => getContextualTip(currentQuestion))
+
+  // 当问题变化时更新提示
+  useEffect(() => {
+    if (currentQuestion) {
+      setCurrentTip(getContextualTip(currentQuestion))
+    }
+  }, [currentQuestion])
 
   // 面试技巧
   const interviewTips = [
@@ -725,21 +773,29 @@ export default function InterviewRoom() {
         </div>
       </div>
 
+      {/* 实时提示栏 */}
+      {!interviewEnded && currentQuestion && (
+        <div className="bg-indigo-50 dark:bg-indigo-900/30 border-t border-indigo-100 dark:border-indigo-800 px-4 py-3">
+          <div className="max-w-3xl mx-auto">
+            <p className="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">{currentTip}</p>
+          </div>
+        </div>
+      )}
+
       {/* 输入区域 */}
       {!interviewEnded && currentQuestion && (
         <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-4">
-          <form onSubmit={handleSubmitAnswer} className="max-w-3xl mx-auto">
+          <form onSubmit={handleSubmit(onSubmitAnswer)} className="max-w-3xl mx-auto">
             <div className="flex gap-3 items-end">
               <div className="flex-1 relative">
                 <textarea
-                  value={answer}
-                  onChange={e => setAnswer(e.target.value)}
+                  {...register('answer')}
                   placeholder="输入你的回答... (Shift+Enter 换行)"
                   disabled={submitting}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
-                      handleSubmitAnswer()
+                      handleSubmit(onSubmitAnswer)()
                     }
                   }}
                   className={`w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm leading-relaxed transition shadow-sm ${voiceMode ? 'pl-10 pr-4' : 'px-4'}`}
@@ -793,6 +849,9 @@ export default function InterviewRoom() {
                 )}
               </button>
             </div>
+            {errors.answer && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.answer.message}</p>
+            )}
             <div className="flex items-center justify-between mt-2 text-xs text-gray-400 dark:text-gray-500">
               <span>提示：按 Enter 发送，Shift+Enter 换行</span>
               <span>{submitting ? '面试官正在评估你的回答...' : '等待你的回答'}</span>
