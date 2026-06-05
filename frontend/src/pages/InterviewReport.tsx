@@ -272,6 +272,7 @@ export default function InterviewReport() {
   const [error, setError] = useState('')
   const [progress, setProgress] = useState<{ step: string; percent: number; message: string }>({ step: '', percent: 0, message: '' })
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set())
+  const [isExporting, setIsExporting] = useState(false)
   const reportRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -414,40 +415,94 @@ export default function InterviewReport() {
     }
   }
 
+  // 辅助函数：裁剪 canvas 的指定区域
+  const cropCanvas = (source: HTMLCanvasElement, sx: number, sy: number, sw: number, sh: number): HTMLCanvasElement => {
+    const c = document.createElement('canvas');
+    c.width = sw;
+    c.height = sh;
+    const ctx = c.getContext('2d');
+    ctx?.drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh);
+    return c;
+  };
+
   const handleExportPDF = async () => {
-    showToast('正在生成 PDF，请稍候...', 'info')
+    if (!report || !interview || isExporting) return;
+    setIsExporting(true);
+    showToast('正在生成 PDF，请稍候...', 'info');
+    
     try {
-      const element = reportRef.current
-      if (!element) return
-      const canvas = await html2canvas(element, {
+      // 1. 截图报告内容（白色背景）
+      const reportElement = reportRef.current;
+      if (!reportElement) throw new Error('报告元素未找到');
+      
+      const canvas = await html2canvas(reportElement, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#ffffff',
         logging: false,
-      })
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = pdf.internal.pageSize.getHeight()
-      const imgWidth = pdfWidth
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let heightLeft = imgHeight
-      let position = 0
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pdfHeight
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= pdfHeight
+      });
+      
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      
+      // 2. PDF 页面设置
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfPageWidth = pdf.internal.pageSize.getWidth();  // 210mm
+      const pdfPageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      
+      const margin = 10; // 边距 10mm
+      const headerH = 12; // 页眉高度
+      const footerH = 12; // 页脚高度
+      const contentX = margin;
+      const contentY = margin + headerH;
+      const contentW = pdfPageWidth - margin * 2;
+      const contentH = pdfPageHeight - margin * 2 - headerH - footerH;
+      
+      // 3. 计算分页：每一页能放多少像素的内容
+      const scale = contentW / imgWidth;
+      const pageContentHeightPx = contentH / scale; // 每一页能放的原图像素高度
+      const totalPages = Math.ceil(imgHeight / pageContentHeightPx);
+      
+      // 4. 逐页生成 PDF
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) pdf.addPage();
+        
+        // 裁剪当前页对应的原图区域
+        const cropY = page * pageContentHeightPx;
+        const cropH = Math.min(pageContentHeightPx, imgHeight - cropY);
+        const croppedCanvas = cropCanvas(canvas, 0, cropY, imgWidth, cropH);
+        const croppedImgData = croppedCanvas.toDataURL('image/png');
+        
+        // 绘制页眉
+        pdf.setFontSize(9);
+        pdf.setTextColor(120, 120, 120);
+        pdf.text('简历面试AI助手 · 面试报告', margin, margin + headerH - 4);
+        pdf.text(new Date().toLocaleDateString('zh-CN'), pdfPageWidth - margin, margin + headerH - 4, { align: 'right' });
+        pdf.setDrawColor(220, 220, 220);
+        pdf.line(margin, margin + headerH, pdfPageWidth - margin, margin + headerH);
+        
+        // 绘制页脚
+        pdf.setFontSize(8);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`第 ${page + 1} 页 / 共 ${totalPages} 页`, pdfPageWidth / 2, pdfPageHeight - margin - footerH + 4, { align: 'center' });
+        pdf.text('© 2024 简历面试AI助手 · 本报告由AI生成，仅供参考', pdfPageWidth / 2, pdfPageHeight - margin - 2, { align: 'center' });
+        
+        // 添加当前页内容图片
+        const pageImgH = cropH * scale;
+        pdf.addImage(croppedImgData, 'PNG', contentX, contentY, contentW, pageImgH);
       }
-      pdf.save(`面试报告_${interview?.title || 'report'}.pdf`)
-      showToast('PDF 已导出！', 'success')
-    } catch (err) {
-      console.error('PDF export failed:', err)
-      showToast('PDF 导出失败，请重试', 'error')
+      
+      // 5. 保存 PDF
+      pdf.save(`面试报告_${(interview.title || 'report').replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      showToast('PDF 导出成功！', 'success');
+      
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      showToast('PDF 导出失败，请重试', 'error');
+    } finally {
+      setIsExporting(false);
     }
-  }
+  };
 
   // ── 加载/错误状态 ─────────────────────────────────
   if (loading || generating) {
