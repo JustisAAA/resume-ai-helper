@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { enterpriseAPI } from '../services/api';
+import { ArrowLeftIcon, ArrowPathIcon, ExclamationCircleIcon, DocumentTextIcon, SparklesIcon, DocumentMagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 const EnterpriseResumeDetail: React.FC = () => {
   const { applicationId } = useParams<{ applicationId: string }>();
@@ -27,9 +28,9 @@ const EnterpriseResumeDetail: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">加载中...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
-  if (!resume) return <div className="p-8 text-center text-gray-500">简历不存在</div>;
+  if (loading) return <div className="p-8 text-center text-gray-500"><ArrowPathIcon className="mx-auto h-8 w-8 animate-spin text-indigo-500 mb-2" />加载中...</div>;
+  if (error) return <div className="p-8 text-center text-red-500"><ExclamationCircleIcon className="mx-auto h-8 w-8 mb-2" />{error}</div>;
+  if (!resume) return <div className="p-8 text-center text-gray-500"><DocumentTextIcon className="mx-auto h-10 w-10 mb-2 text-gray-400" />简历不存在</div>;
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -37,7 +38,7 @@ const EnterpriseResumeDetail: React.FC = () => {
         onClick={() => navigate('/enterprise/applications')}
         className="mb-4 text-indigo-600 hover:text-indigo-900"
       >
-        ← 返回申请列表
+        <ArrowLeftIcon className="w-4 h-4 mr-1" />← 返回申请列表
       </button>
 
       <div className="bg-white shadow rounded-lg p-6">
@@ -55,7 +56,7 @@ const EnterpriseResumeDetail: React.FC = () => {
 
         {resume.analysis && (
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-2">AI分析</h2>
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2"><SparklesIcon className="w-5 h-5 text-indigo-600" />AI分析</h2>
             <div className="bg-gray-50 p-4 rounded whitespace-pre-wrap text-sm">
               {typeof resume.analysis === 'string' 
                 ? resume.analysis 
@@ -67,7 +68,7 @@ const EnterpriseResumeDetail: React.FC = () => {
 
         {resume.content && (
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-2">简历内容</h2>
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2"><DocumentTextIcon className="w-5 h-5 text-indigo-600" />简历内容</h2>
             <div className="bg-gray-50 p-4 rounded whitespace-pre-wrap text-sm max-h-96 overflow-y-auto">
               {resume.content}
             </div>
@@ -76,7 +77,7 @@ const EnterpriseResumeDetail: React.FC = () => {
 
         {resume.rawText && !resume.content && (
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-2">简历原文</h2>
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2"><DocumentMagnifyingGlassIcon className="w-5 h-5 text-indigo-600" />简历原文</h2>
             <div className="bg-gray-50 p-4 rounded whitespace-pre-wrap text-sm max-h-96 overflow-y-auto">
               {resume.rawText}
             </div>
