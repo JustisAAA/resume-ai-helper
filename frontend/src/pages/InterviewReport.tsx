@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts'
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } from 'recharts'
 import { useToast } from '../components/Toast'
 import type { ReportData, InterviewData, QuestionReview as QuestionReviewType, AnswerData } from '../types/report'
 import jsPDF from 'jspdf'
@@ -595,6 +595,26 @@ export default function InterviewReport() {
         <div id="dimension-analysis">
           <DimensionSection radarData={radarData} />
         </div>
+
+        {/* 评分柱状图 */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm">📊</span>
+            各维度得分
+          </h2>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={radarData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="dimension" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip />
+                <Bar dataKey="score" fill="#6366f1" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
         <div id="interview-stats">
           <StatsSection stats={interviewStats} actualDuration={interview.duration} />
         </div>
