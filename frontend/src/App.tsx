@@ -30,6 +30,10 @@ const EnterpriseRegister = lazy(() => import('./pages/EnterpriseRegister'))
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'))
 const EnterpriseJobs = lazy(() => import('./pages/EnterpriseJobs'))
 const EnterpriseJobEdit = lazy(() => import('./pages/EnterpriseJobEdit'))
+const EnterpriseApplications = lazy(() => import('./pages/EnterpriseApplications'))
+const EnterpriseResumeDetail = lazy(() => import('./pages/EnterpriseResumeDetail'))
+const EnterpriseInterviewList = lazy(() => import('./pages/EnterpriseInterviewList'))
+const EnterpriseInterviewReport = lazy(() => import('./pages/EnterpriseInterviewReport'))
 
 /* ── 路由守卫 ── */
 
@@ -115,6 +119,10 @@ function App() {
       <Route path="/enterprise/jobs" element={<EnterpriseRoute><EnterpriseJobs /></EnterpriseRoute>} />
       <Route path="/enterprise/jobs/new" element={<EnterpriseRoute><EnterpriseJobEdit /></EnterpriseRoute>} />
       <Route path="/enterprise/jobs/:id/edit" element={<EnterpriseRoute><EnterpriseJobEdit /></EnterpriseRoute>} />
+      <Route path="/enterprise/applications" element={<EnterpriseRoute><EnterpriseApplications /></EnterpriseRoute>} />
+      <Route path="/enterprise/applications/:applicationId/resume" element={<EnterpriseRoute><EnterpriseResumeDetail /></EnterpriseRoute>} />
+      <Route path="/enterprise/interviews" element={<EnterpriseRoute><EnterpriseInterviewList /></EnterpriseRoute>} />
+      <Route path="/enterprise/interviews/:interviewId/report" element={<EnterpriseRoute><EnterpriseInterviewReport /></EnterpriseRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

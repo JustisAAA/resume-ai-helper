@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { createJob, getJobs, getJobById, updateJob, deleteJob, updateJobStatus } from '../services/jobService';
 import { authenticateToken, requireEnterprise } from '../middleware/auth';
 import { JobStatus } from '@prisma/client';
+import { getApplicationsByJobId } from '../services/applicationService';
 
 const router = Router();
 
@@ -171,6 +172,43 @@ router.patch('/:id/status', authenticateToken, requireEnterprise, async (req: Re
   } catch (error: any) {
     console.error('更新职位状态错误:', error);
     res.status(400).json({ error: error.message || '更新职位状态失败' });
+  }
+});
+
+// 获取职位的申请列表（需要企业权限）
+router.get('/:jobId/applications', authenticateToken, requireEnterprise, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { jobId } = req.params;
+
+    // 获取企业ID
+    const { prisma } = require('../index');
+    const enterprise = await prisma.enterprise.findUnique({
+      where: { userId }
+    });
+
+    if (!enterprise) {
+      return res.status(404).json({ error: '企业信息不存在' });
+    }
+
+    // 获取申请列表
+    const applications = await getApplicationsByJobId(jobId, enterprise.id);
+
+    res.json({
+      message: '获取申请列表成功',
+      applications
+    });
+  } catch (error: any) {
+    console.error('获取职位申请列表错误:', error);
+
+    // 根据错误信息返回相应的状态码
+    if (error.message === '职位不存在') {
+      return res.status(404).json({ error: error.message });
+    } else if (error.message.includes('权限不足')) {
+      return res.status(403).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: error.message || '获取职位申请列表失败' });
   }
 });
 

@@ -586,6 +586,46 @@ export const enterpriseAPI = {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.data;
+  },
+
+  /**
+   * 获取职位的申请列表
+   */
+  async getApplications(jobId: string): Promise<{ applications: any[] }> {
+    const res = await axios.get(getApiUrl(`/jobs/${jobId}/applications`));
+    return res.data;
+  },
+
+  /**
+   * 更新申请状态
+   */
+  async updateStatus(applicationId: string, status: string): Promise<{ application: any }> {
+    const res = await axios.patch(getApiUrl(`/applications/${applicationId}/status`), { status });
+    return res.data;
+  },
+
+  /**
+   * 获取申请简历详情
+   */
+  async getResume(applicationId: string): Promise<{ resume: any }> {
+    const res = await axios.get(getApiUrl(`/applications/${applicationId}/resume`));
+    return res.data;
+  },
+
+  /**
+   * 获取企业面试列表
+   */
+  async getInterviews(): Promise<{ interviews: any[] }> {
+    const res = await axios.get(getApiUrl('/enterprise/interviews'));
+    return res.data;
+  },
+
+  /**
+   * 获取面试报告
+   */
+  async getReport(interviewId: string): Promise<{ report: any }> {
+    const res = await axios.get(getApiUrl(`/enterprise/interviews/${interviewId}/report`));
+    return res.data;
   }
 };
 
