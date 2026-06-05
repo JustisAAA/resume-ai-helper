@@ -310,13 +310,62 @@ export const interviewAPI = {
   },
 
   /**
-   * 生成面试报告
+   * 生成面试报告 (SSE流式)
    */
-  async generateReport(token: string, id: string): Promise<unknown> {
-    const res = await axios.post(getApiUrl(`/interviews/${id}/report`), {}, {
-      headers: { Authorization: `Bearer ${token}` }
+  async generateReport(token: string, id: string, onProgress?: (progress: { step: string; percent: number; message: string }) => void): Promise<{ report: any; interview: any }> {
+    const response = await fetch(getApiUrl(`/interviews/${id}/report`), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
-    return res.data;
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      
+      // Process complete events (separated by \n\n)
+      while (buffer.includes('\n\n')) {
+        const eventEnd = buffer.indexOf('\n\n');
+        const eventStr = buffer.substring(0, eventEnd);
+        buffer = buffer.substring(eventEnd + 2);
+        
+        if (eventStr.startsWith('data: ')) {
+          const dataStr = eventStr.substring(6);
+          try {
+            const data = JSON.parse(dataStr);
+            if (data.type === 'progress' && onProgress) {
+              onProgress({ step: data.step, percent: data.percent, message: data.message });
+            } else if (data.type === 'complete') {
+              return { report: data.report, interview: data.interview };
+            } else if (data.type === 'error') {
+              throw new Error(data.error || '生成报告失败');
+            }
+          } catch (e: any) {
+            console.error('SSE parse error:', e);
+            if (e.message) throw e;
+          }
+        }
+      }
+    }
+
+    throw new Error('Stream ended without complete event');
   },
 
   /**

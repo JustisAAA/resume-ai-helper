@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../index';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import { aiLimiter } from '../middleware/rateLimit';
 
 /** 面试回答记录 */
 interface Answer {
@@ -72,32 +73,68 @@ function getMockEvaluation(answer: string, questionCount: number, position: stri
 }
 
 // 模拟数据：面试报告
-function getMockReport(interview: any, answers: any[]): string {
+function getMockReport(interview: any, answers: any[]): any {
   const totalScore = answers.reduce((sum: number, a: any) => sum + (a.score || 0), 0);
   const avgScore = answers.length > 0 ? Math.round(totalScore / answers.length) : 0;
+  const overallScore = Math.round(avgScore * 10);
   
-  return `# 模拟面试报告
-
-## 总体评价
-恭喜你完成了"${interview.title || '模拟面试'}"！你的综合得分是 **${avgScore}分**（满分10分）。
-
-## 分项评价
-${answers.map((a: any, i: number) => `### 第${i+1}题（得分：${a.score}/10）
-**问题**：${a.question}
-**你的回答**：${a.answer.substring(0, 100)}${a.answer.length > 100 ? '...' : ''}
-**评价**：${a.comment}
-**亮点**：${a.highlights?.join('、') || '无'}
-**改进建议**：${a.improvements?.join('、') || '无'}
-`).join('\n')}
-
-## 综合建议
-你在本次面试中展现了${avgScore >= 8 ? '优秀的' : avgScore >= 6 ? '良好的' : '基本的'}专业能力。建议：
-1. ${avgScore >= 8 ? '继续保持高质量回答，注意时间控制' : '增加具体案例和数据支撑'}
-2. 多练习行为面试问题（STAR法则）
-3. 准备1-2个深入的项目案例
-
----
-*本报告由AI生成，仅供参考。*`;
+  return {
+    overall_score: overallScore,
+    pass_probability: overallScore >= 60 ? "75%" : "40%",
+    dimension_scores: {
+      "技术能力": Math.min(100, overallScore + 5),
+      "沟通能力": Math.min(100, overallScore + 2),
+      "逻辑思维": Math.min(100, overallScore + 8),
+      "压力应对": Math.min(100, overallScore - 5),
+      "职业规划": Math.min(100, overallScore - 10),
+      "语言表达": Math.min(100, overallScore + 3),
+      "专业知识": Math.min(100, overallScore + 7)
+    },
+    question_reviews: answers.map((a: any, i: number) => ({
+      question_num: i + 1,
+      question: a.question,
+      answer: a.answer,
+      score: a.score,
+      comment: a.comment,
+      highlights: a.highlights || [],
+      improvements: a.improvements || []
+    })),
+    strengts: [
+      "技术栈匹配度高，有实战经验",
+      "沟通表达清晰，逻辑思维较强",
+      "对项目有深入思考"
+    ],
+    improvements: [
+      "建议准备更多量化案例，用数据证明能力",
+      "可以提前准备STAR法则的行为面试答案",
+      "加强对行业趋势的了解"
+    ],
+    optimization_suggestions: [
+      "建议在简历中增加量化成果描述，如'提升性能30%'、'服务10万用户'等",
+      "准备3-5个STAR法则的行为面试故事，覆盖团队合作、冲突解决、压力应对等场景",
+      "深入研究目标公司的技术栈和业务，准备2-3个能体现你价值的具体案例",
+      "练习清晰简洁地表达自己的项目经验，确保在2-3分钟内讲清楚核心技术点",
+      "准备一些行业趋势的见解，展现你对领域的深度思考"
+    ],
+    interview_review: {
+      total_questions: answers.length,
+      total_duration: interview.startedAt && interview.completedAt ? 
+        Math.max(0, Math.round((new Date(interview.completedAt).getTime() - new Date(interview.startedAt).getTime()) / 1000)) : 
+        1800,
+      main_topics: ["项目经验", "技术深度", "团队协作", "职业规划"],
+      summary: "本次模拟面试涵盖了项目经验、技术深度等核心考察点，整体表现良好。建议在行为面试方面加强准备，多准备STAR法则的案例。"
+    },
+    interview_stats: {
+      total_questions: answers.length,
+      total_duration: interview.startedAt && interview.completedAt ? 
+        Math.max(0, Math.round((new Date(interview.completedAt).getTime() - new Date(interview.startedAt).getTime()) / 1000)) : 
+        1800,
+      avg_answer_length: Math.round(answers.reduce((sum: number, a: any) => sum + (a.answer || '').length, 0) / answers.length),
+      high_score_questions: answers.filter((a: any) => a.score >= 8).length,
+      low_score_questions: answers.filter((a: any) => a.score <= 5).length
+    },
+    final_advice: "整体表现良好，技术能力突出。建议在后续面试中多准备量化案例，并提前用STAR法则梳理行为面试答案。同时可以加强对行业趋势的了解，展现更广阔的视野。"
+  };
 }
 
 // ========== 结束：模拟模式函数和数据 ==========
@@ -204,7 +241,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // 开始面试（生成第一个问题）
-router.post('/:id/start', authMiddleware, async (req: Request, res: Response) => {
+router.post('/:id/start', aiLimiter, authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -350,7 +387,7 @@ ${resumeText.substring(0, 4000)}
 });
 
 // 提交回答（获取评价和下一个问题）
-router.post('/:id/answer', authMiddleware, async (req: Request, res: Response) => {
+router.post('/:id/answer', aiLimiter, authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -631,46 +668,72 @@ router.post('/:id/end', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-// 生成面试报告
-router.post('/:id/report', authMiddleware, async (req: Request, res: Response) => {
+// 生成面试报告 (SSE流式返回)
+router.post('/:id/report', aiLimiter, authMiddleware, async (req: Request, res: Response) => {
+  // 设置SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  // 发送SSE事件
+  const sendEvent = (data: any) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
   try {
     const userId = req.userId!;
     const { id } = req.params;
     
+    // 进度：开始
+    sendEvent({ type: 'progress', step: 'init', percent: 0, message: '开始生成报告...' });
+
     const interview = await prisma.interview.findFirst({
       where: { id, userId },
       include: { resume: true }
     });
     
     if (!interview) {
-      return res.status(404).json({ error: '面试不存在' });
+      sendEvent({ type: 'error', error: '面试不存在' });
+      return res.end();
     }
     
     if (interview.status !== 'COMPLETED') {
-      return res.status(400).json({ error: '面试未完成，无法生成报告' });
+      sendEvent({ type: 'error', error: '面试未完成，无法生成报告' });
+      return res.end();
     }
     
     const answers = interview.answers as unknown as Answer[] || [];
     
     if (answers.length === 0) {
-      return res.status(400).json({ error: '没有面试回答记录' });
+      sendEvent({ type: 'error', error: '没有面试回答记录' });
+      return res.end();
     }
     
     // 模拟模式：返回模拟报告（不调用真实API）
     if (isMockMode()) {
+      sendEvent({ type: 'progress', step: 'generating', percent: 30, message: '生成模拟报告中...' });
+      await new Promise(resolve => setTimeout(resolve, 800));
+      sendEvent({ type: 'progress', step: 'parsing', percent: 60, message: '解析报告数据...' });
       const mockReport = getMockReport(interview, answers);
-      return res.json({
-        report: mockReport,
-        mock: true
+      sendEvent({ type: 'progress', step: 'saving', percent: 90, message: '保存报告...' });
+      const updatedInterview = await prisma.interview.update({
+        where: { id },
+        data: { feedback: mockReport }
       });
+      sendEvent({ type: 'complete', report: mockReport, interview: updatedInterview });
+      return res.end();
     }
     
     // 真实模式：调用元器API生成报告
     const appid = process.env.YUANQI_APPID;
     const appkey = process.env.YUANQI_APPKEY;
     if (!appid || !appkey) {
-      return res.status(500).json({ error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+      sendEvent({ type: 'error', error: '服务器配置错误：缺少 YUANQI_APPID 或 YUANQI_APPKEY 环境变量' });
+      return res.end();
     }
+    
+    sendEvent({ type: 'progress', step: 'calling_ai', percent: 20, message: '调用AI生成报告...' });
     
     // 构建面试历史文本
     const interviewHistory = answers.map((a: any, index: number) => {
@@ -738,6 +801,12 @@ ${interviewHistory}
 ### 8. 最终建议
 一段总结性的建议文字（100-200字），给候选人指明后续努力方向。
 
+### 9. 优化建议（新增）
+针对候选人的表现，给出3-5条具体的简历优化和面试准备建议，帮助候选人提升竞争力。
+
+### 10. 面试模拟记录回顾（新增）
+简要回顾本次面试的模拟过程，包括总题数、总时长、主要考察点，让候选人对整场模拟有整体认知。
+
 ## 输出格式（严格JSON，不要输出其他内容）
 {
   "overall_score": 78,
@@ -770,6 +839,17 @@ ${interviewHistory}
     "建议准备更多量化案例，用数据证明能力",
     "可以提前准备STAR法则的行为面试答案"
   ],
+  "optimization_suggestions": [
+    "建议在简历中增加量化成果描述，如'提升性能30%'、'服务10万用户'等",
+    "准备3-5个STAR法则的行为面试故事，覆盖团队合作、冲突解决、压力应对等场景",
+    "深入研究目标公司的技术栈和业务，准备2-3个能体现你价值的具体案例"
+  ],
+  "interview_review": {
+    "total_questions": 5,
+    "total_duration": 1800,
+    "main_topics": ["项目经验", "技术深度", "团队协作", "职业规划"],
+    "summary": "本次模拟面试涵盖了项目经验、技术深度等核心考察点，整体表现良好。建议在行为面试方面加强准备。"
+  },
   "interview_stats": {
     "total_questions": 5,
     "total_duration": "<根据实际开始时间和结束时间计算，单位秒>",
@@ -784,6 +864,7 @@ ${interviewHistory}
 - 所有评分要客观、有依据
 - 建议要具体、可操作
 - total_duration 必须根据面试开始时间(startedAt)和结束时间(completedAt)计算真实时长（秒），严禁使用示例中的占位值
+- optimization_suggestions 和 interview_review 是新增字段，必须包含
 - 不要输出JSON以外的任何内容`
             }
           ]
@@ -797,6 +878,8 @@ ${interviewHistory}
       timeout: 60000
     });
     
+    sendEvent({ type: 'progress', step: 'parsing', percent: 80, message: '解析报告数据...' });
+    
     // 解析AI返回的报告
     const content = (response as any).data.choices[0].message.content;
     let report;
@@ -805,9 +888,10 @@ ${interviewHistory}
       report = JSON.parse(jsonMatch ? jsonMatch[0] : content);
     } catch (e) {
       console.error('报告解析失败:', e);
-      return res.status(500).json({ error: '报告生成失败，JSON解析错误' });
+      sendEvent({ type: 'error', error: '报告生成失败，JSON解析错误' });
+      return res.end();
     }
-
+    
     // 用真实的 startedAt/completedAt 重新计算 total_duration，覆盖 AI 可能抄的示例值
     if (interview.startedAt && interview.completedAt) {
       const realDuration = Math.max(0, Math.round(
@@ -818,6 +902,8 @@ ${interviewHistory}
       }
     }
     
+    sendEvent({ type: 'progress', step: 'saving', percent: 90, message: '保存报告...' });
+    
     // 更新面试记录，保存报告
     const updatedInterview = await prisma.interview.update({
       where: { id },
@@ -826,14 +912,12 @@ ${interviewHistory}
       }
     });
     
-    res.json({
-      message: '报告生成成功',
-      interview: updatedInterview,
-      report
-    });
+    sendEvent({ type: 'complete', report, interview: updatedInterview });
+    res.end();
   } catch (error: any) {
     console.error('生成报告失败:', error);
-    res.status(500).json({ error: extractApiError(error, '生成报告失败') });
+    sendEvent({ type: 'error', error: extractApiError(error, '生成报告失败') });
+    res.end();
   }
 });
 

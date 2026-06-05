@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import fs from 'fs';
+import { generalLimiter } from './middleware/rateLimit';
 
 // 加载环境变量
 dotenv.config();
@@ -24,7 +25,11 @@ const uploadsPath = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads', express.static(uploadsPath, {
+  maxAge: '7d',
+  etag: true,
+  lastModified: true,
+}));
 
 // 健康检查
 app.get('/health', (req: Request, res: Response) => {
@@ -41,6 +46,7 @@ import enterpriseRoutes from './routes/enterprise';
 import jobRoutes from './routes/job';
 import applicationRoutes from './routes/application';
 import enterpriseInterviewRoutes from './routes/enterpriseInterview';
+app.use('/api', generalLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/interviews', interviewRoutes);

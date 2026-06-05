@@ -5,6 +5,7 @@ import { prisma } from '../index';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { loginLimiter, registerLimiter } from '../middleware/rateLimit';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
@@ -25,7 +26,7 @@ const avatarStorage = multer.diskStorage({
 const uploadAvatar = multer({ storage: avatarStorage, limits: { fileSize: 2 * 1024 * 1024 } }); // 最大2MB
 
 // 用户注册
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', registerLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
@@ -84,7 +85,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // 用户登录
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 

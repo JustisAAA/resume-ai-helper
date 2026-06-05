@@ -457,14 +457,20 @@ export default function InterviewReport() {
         <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">
           {generating ? 'AI 正在生成面试报告...' : '加载中...'}
         </p>
-        {generating && (
-          <div className="text-center">
-            <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">分析面试表现，生成详细评估</p>
-            <div className="w-48 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse" />
+          {generating && (
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                <span>{progress.step === 'init' ? '初始化...' : progress.step === 'generating' ? '生成报告中...' : progress.step === 'calling_ai' ? '调用AI...' : progress.step === 'parsing' ? '解析数据...' : progress.step === 'saving' ? '保存报告...' : '处理中...'}</span>
+                <span>{progress.percent}%</span>
+              </div>
+              <div className="w-80 h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progress.percent}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     )
   }
@@ -620,6 +626,55 @@ export default function InterviewReport() {
         <div id="suggestions">
           <SuggestionSection strengths={strengths} improvements={improvements} />
         </div>
+
+        {/* 优化建议 */}
+        {report?.optimization_suggestions && report.optimization_suggestions.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm">🔧</span>
+              优化建议
+            </h2>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+              <ul className="space-y-3">
+                {report.optimization_suggestions.map((suggestion: string, i: number) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">💡</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {/* 面试模拟记录回顾 */}
+        {report?.interview_review && (
+          <section className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-teal-100 text-teal-600 dark:text-teal-400 flex items-center justify-center text-sm">📋</span>
+              面试模拟记录回顾
+            </h2>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <span>📝 总题数：{report.interview_review.total_questions}题</span>
+                  <span>🕱 总时长：{Math.floor((report.interview_review.total_duration || 0) / 60)}分{((report.interview_review.total_duration || 0) % 60)}秒</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">主要考察点：</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(report.interview_review.main_topics || []).map((topic: string, i: number) => (
+                      <span key={i} className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-sm">{topic}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{report.interview_review.summary}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 最终建议 */}
         {report?.final_advice && (

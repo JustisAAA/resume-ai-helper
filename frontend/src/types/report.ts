@@ -27,6 +27,13 @@ export interface ReportData {
   question_reviews: QuestionReview[]
   strengths: string[]
   improvements: string[]
+  optimization_suggestions?: string[]
+  interview_review?: {
+    total_questions: number
+    total_duration: number
+    main_topics: string[]
+    summary: string
+  }
   interview_stats: InterviewStats
   final_advice: string
 }
