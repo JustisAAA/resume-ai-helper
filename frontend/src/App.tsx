@@ -35,6 +35,9 @@ const EnterpriseApplications = lazy(() => import('./pages/EnterpriseApplications
 const EnterpriseResumeDetail = lazy(() => import('./pages/EnterpriseResumeDetail'))
 const EnterpriseInterviewList = lazy(() => import('./pages/EnterpriseInterviewList'))
 const EnterpriseInterviewReport = lazy(() => import('./pages/EnterpriseInterviewReport'))
+const JobSeekerHome = lazy(() => import('./pages/JobSeekerHome'))
+const EnterpriseMarketing = lazy(() => import('./pages/EnterpriseMarketing'))
+const EnterpriseAnalytics = lazy(() => import('./pages/EnterpriseAnalytics'))
 
 /* ── 路由守卫 ── */
 
@@ -85,6 +88,7 @@ function App() {
     <Routes>
       {/* 公开页面 */}
       <Route path="/" element={<Home />} />
+      <Route path="/home" element={<JobSeekerHome />} />
 
       {/* 未登录才能访问 */}
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
@@ -115,6 +119,8 @@ function App() {
       <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
 
       {/* 企业页面（普通用户会被踢走） */}
+      <Route path="/enterprise" element={<Navigate to="/enterprise/marketing" replace />} />
+      <Route path="/enterprise/marketing" element={<EnterpriseMarketing />} />
       <Route path="/enterprise/login" element={<GuestRoute><EnterpriseLogin /></GuestRoute>} />
       <Route path="/enterprise/register" element={<GuestRoute><EnterpriseRegister /></GuestRoute>} />
       <Route path="/enterprise/dashboard" element={<EnterpriseRoute><EnterpriseDashboard /></EnterpriseRoute>} />
@@ -125,6 +131,7 @@ function App() {
       <Route path="/enterprise/applications/:applicationId/resume" element={<EnterpriseRoute><EnterpriseResumeDetail /></EnterpriseRoute>} />
       <Route path="/enterprise/interviews" element={<EnterpriseRoute><EnterpriseInterviewList /></EnterpriseRoute>} />
       <Route path="/enterprise/interviews/:interviewId/report" element={<EnterpriseRoute><EnterpriseInterviewReport /></EnterpriseRoute>} />
+      <Route path="/enterprise/analytics" element={<EnterpriseRoute><EnterpriseAnalytics /></EnterpriseRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
