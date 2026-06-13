@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
+import ThemeToggle from '../components/ThemeToggle'
 import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useToast } from '../components/Toast';
 import { exportTextToPdf } from '../utils/exportPdf';
-import { useTheme } from '../context/ThemeContext';
 import { resumeAPI } from '../services/api';
+import ErrorAlert from '../components/ErrorAlert';
+import Loading from '../components/Loading';
 
 interface Resume {
   id: string;
@@ -30,7 +33,6 @@ function ResumeDetail() {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { dark, toggleTheme } = useTheme();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -97,8 +99,8 @@ function ResumeDetail() {
     return '需改进';
   };
 
-  if (loading) return <div className="p-5 text-center text-gray-600 dark:text-gray-300">加载中...</div>;
-  if (error) return <div className="p-5 text-center text-red-500">{error}</div>;
+  if (loading) return <Loading size="sm" />;
+  if (error) return <ErrorAlert message={error} />;
   if (!resume) return <div className="p-5 text-center text-gray-600 dark:text-gray-300">简历不存在</div>;
 
   const scores = resume!.analysis?.scores || {};
@@ -106,46 +108,51 @@ function ResumeDetail() {
   const currentResume = resume!;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* 导航栏 */}
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left: Back button + Title */}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate('/resumes')} 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+              >
+                <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">{currentResume.title}</h1>
+            </div>
+            {/* Right: Actions + Theme Toggle */}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleDelete} 
+                className="px-3 py-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 font-medium"
+              >
+                删除
+              </button>
+              <button
+                onClick={() => {
+                  try {
+                    exportTextToPdf(currentResume.title || '简历', currentResume.rawText || '', currentResume.title || '简历');
+                    showToast('PDF导出成功', 'success');
+                  } catch (err: unknown) {
+                    const errObj = err as Error;
+                    showToast('PDF导出失败：' + errObj.message, 'error');
+                  }
+                }}
+                className="px-3 py-2 text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 font-medium"
+              >
+                📄 导出PDF
+              </button>
+<ThemeToggle />
+
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <div className="max-w-4xl mx-auto p-5">
-      {/* 顶部导航栏 */}
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm">
-            ← 首页
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white m-0">{currentResume.title}</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors"
-            title={dark ? '切换到亮色模式' : '切换到暗色模式'}
-          >
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-            )}
-          </button>
-          <button onClick={() => navigate('/resumes')} className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">返回列表</button>
-          <button onClick={handleDelete} className="px-3 py-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400">删除</button>
-          <button
-            onClick={() => {
-              try {
-                exportTextToPdf(currentResume.title || '简历', currentResume.rawText || '', currentResume.title || '简历');
-                showToast('PDF导出成功', 'success');
-              } catch (err: unknown) {
-                const errObj = err as Error;
-                showToast('PDF导出失败：' + errObj.message, 'error');
-              }
-            }}
-            className="px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
-          >
-            📄 导出PDF
-          </button>
-        </div>
-      </div>
 
       {/* 基本信息和操作 */}
       <div className="mb-8 p-5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800">
@@ -190,13 +197,13 @@ function ResumeDetail() {
       {hasAnalysis && (
         <div className="mb-8">
           {/* 总体评价 */}
-          <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl mb-5 bg-white dark:bg-gray-900">
+          <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl mb-5 bg-white dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">总体评价</h3>
-            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{currentResume.analysis?.summary || '暂无评价'}</p>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{currentResume.analysis?.summary || <span className="text-gray-400">暂无评价</span>}</p>
           </div>
 
           {/* 维度得分 */}
-          <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl mb-5 bg-white dark:bg-gray-900">
+          <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl mb-5 bg-white dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">维度得分</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {[
@@ -257,7 +264,7 @@ function ResumeDetail() {
 
           {/* 推荐关键词 */}
           {currentResume.analysis?.keyword_recommendations && currentResume.analysis.keyword_recommendations.length > 0 && (
-            <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl mb-5 bg-white dark:bg-gray-900">
+            <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl mb-5 bg-white dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">推荐关键词</h3>
               <div className="flex flex-wrap gap-2">
                 {currentResume.analysis?.keyword_recommendations?.map((k: string, i: number) => (
@@ -272,7 +279,7 @@ function ResumeDetail() {
       )}
 
       {/* 简历原文 */}
-      <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900">
+      <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">简历原文</h3>
         <pre className="whitespace-pre-wrap text-sm max-h-96 overflow-auto bg-gray-50 dark:bg-gray-800 p-4 rounded-lg text-gray-600 dark:text-gray-300 leading-relaxed">
           {currentResume.rawText}

@@ -1,424 +1,403 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTheme } from '../context/ThemeContext'
+import ThemeToggle from '../components/ThemeToggle'
 
-interface User {
-  name?: string
-  email?: string
+/* ── 渐变动态背景组件 ── */
+function HeroBg() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* 主渐变底色 */}
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900" />
+
+      {/* 动态光斑 1 */}
+      <div className="absolute -top-40 -left-20 w-[600px] h-[600px] bg-brand-300/20 dark:bg-brand-800/20 rounded-full blur-[120px] animate-blob" />
+      {/* 动态光斑 2 */}
+      <div className="absolute -bottom-40 -right-20 w-[500px] h-[500px] bg-purple-300/20 dark:bg-purple-800/20 rounded-full blur-[120px] animate-blob animation-delay-2000" />
+      {/* 动态光斑 3 */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-cyan-300/15 dark:bg-cyan-800/15 rounded-full blur-[100px] animate-blob animation-delay-4000" />
+
+      {/* 网格背景纹理 */}
+      <div
+        className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)',
+          backgroundSize: '30px 30px',
+        }}
+      />
+    </div>
+  )
 }
 
+/* ── 悬浮动画样式 (通过 className 注入) ── */
+const floatingAnimation = `
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+.animate-blob { animation: blob 8s infinite ease-in-out; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.7s ease-out forwards; }
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in { animation: scaleIn 0.5s ease-out forwards; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, #000 0%, #6366f1 20%, #a855f7 40%, #ec4899 60%, #000 80%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+.dark .shimmer-text {
+  background: linear-gradient(90deg, #fff 0%, #818cf8 20%, #c084fc 40%, #f472b6 60%, #fff 80%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float { animation: float 4s ease-in-out infinite; }
+`
+
+/* ── 核心价值点（替代假数据） ── */
+const values = [
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+      </svg>
+    ),
+    title: 'AI 大模型驱动',
+    desc: '基于大语言模型，深度理解简历内容与面试场景，提供精准分析与建议',
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+    ),
+    title: '求职全流程覆盖',
+    desc: '从简历分析、评分，到模拟面试、求职攻略、简历模板，覆盖求职各阶段',
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+      </svg>
+    ),
+    title: 'AI 全程陪伴',
+    desc: '注册登录后即可使用，从简历分析到面试复盘，AI 持续提供建议',
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+      </svg>
+    ),
+    title: '数据安全私密',
+    desc: '简历数据本地加密存储，面试过程全程私密，不外泄个人信息',
+  },
+]
+
+/* ── 主组件 ── */
 export default function Home() {
   const navigate = useNavigate()
-  const [user, setUser] = useState<User | null>(null)
-  const { dark, toggleTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    const userStr = localStorage.getItem('user')
-    if (userStr) {
-      try { 
-        setUser(JSON.parse(userStr)) 
-        navigate('/dashboard')
-      } catch(e) { localStorage.removeItem('user') }
-    }
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    setUser(null)
-  }
-
-  const features = [
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-      ),
-      title: '上传简历',
-      desc: 'AI 智能分析简历内容，给出优化建议和评分',
-      action: '开始上传',
-      path: '/resumes',
-      color: 'indigo',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-        </svg>
-      ),
-      title: '开始面试',
-      desc: '基于简历生成个性化面试题，AI 实时评估表现',
-      action: '开始面试',
-      path: '/interviews',
-      color: 'purple',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      title: '查看报告',
-      desc: '回顾面试表现，查看多维度评估报告和评分',
-      action: '查看报告',
-      path: '/reports',
-      color: 'emerald',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-        </svg>
-      ),
-      title: '简历评分',
-      desc: 'AI 多维度评分，诊断简历短板，给出改进建议',
-      action: '开始评分',
-      path: '/tools/score',
-      color: 'amber',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-      ),
-      title: '求职攻略',
-      desc: 'AI 提供求职全阶段实用建议和工具',
-      action: '获取攻略',
-      path: '/tools/guide',
-      color: 'teal',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-        </svg>
-      ),
-      title: '简历模板',
-      desc: '5 款专业模板，一键生成精美简历',
-      action: '查看模板',
-      path: '/templates',
-      color: 'violet',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-      ),
-      title: '人岗匹配',
-      desc: 'AI 分析简历与目标岗位的匹配度，精准定位差距',
-      action: '开始匹配',
-      path: '/tools/match',
-      color: 'rose',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-        </svg>
-      ),
-      title: '简历优化',
-      desc: 'AI 深度优化简历表达，提升关键词覆盖和可读性',
-      action: '开始优化',
-      path: '/tools/optimize',
-      color: 'amber',
-    },
-    {
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-      title: '面试问题',
-      desc: 'AI 根据岗位生成高频面试问题，附标准答案要点',
-      action: '查看问题',
-      path: '/tools/questions',
-      color: 'cyan',
-    },
-  ]
-
-  const colorMap: Record<string, { solidBg: string; text: string; actionText: string }> = {
-    indigo: { solidBg: 'bg-indigo-500', text: 'text-indigo-600', actionText: 'text-indigo-600' },
-    purple: { solidBg: 'bg-purple-500', text: 'text-purple-600', actionText: 'text-purple-600' },
-    emerald: { solidBg: 'bg-emerald-500', text: 'text-emerald-600', actionText: 'text-emerald-600' },
-    amber: { solidBg: 'bg-amber-500', text: 'text-amber-600', actionText: 'text-amber-600' },
-    teal: { solidBg: 'bg-teal-500', text: 'text-teal-600', actionText: 'text-teal-600' },
-    violet: { solidBg: 'bg-violet-500', text: 'text-violet-600', actionText: 'text-violet-600' },
-    rose: { solidBg: 'bg-rose-500', text: 'text-rose-600', actionText: 'text-rose-600' },
-    cyan: { solidBg: 'bg-cyan-500', text: 'text-cyan-600', actionText: 'text-cyan-600' },
-    lime: { solidBg: 'bg-lime-500', text: 'text-lime-600', actionText: 'text-lime-600' },
-  }
-
-  const painPoints = [
-    { icon: '📄', title: '简历石沉大海', desc: '投出几十份简历，回复寥寥无几，不知道问题出在哪里' },
-    { icon: '😰', title: '面试紧张卡壳', desc: '一到面试就紧张，准备好的答案全忘，表现大打折扣' },
-    { icon: '❓', title: '不知如何准备', desc: '网上面经千千万，不知道哪些适合自己，复习没有方向' },
-    { icon: '🎯', title: '不懂岗位匹配', desc: '不清楚自己的简历和JD的差距，不知道该重点突出什么' },
-    { icon: '⏰', title: '准备时间不够', desc: '临近面试才匆忙准备，没有系统性的提升方案' },
-    { icon: '📊', title: '缺乏反馈指导', desc: '练习面试没人点评，不知道自己的回答好不好，错在哪里' },
-  ]
-
-  const advantages = [
-    { icon: '🤖', title: 'AI 深度驱动', desc: '基于大语言模型的智能分析，比传统规则引擎更懂简历和面试' },
-    { icon: '🎯', title: '个性化定制', desc: '基于你的简历内容生成面试题，不是千篇一律的通用题库' },
-    { icon: '📈', title: '多维度评估', desc: '从语言表达、逻辑思维、专业深度等5个维度全面评估面试表现' },
-    { icon: '🔒', title: '数据安全保障', desc: '简历数据本地加密存储，不对外分享，面试过程全程私密' },
-  ]
+  useEffect(() => { setMounted(true) }, [])
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* ===== 导航栏 ===== */}
-      <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      {/* 注入动画样式 */}
+      <style>{floatingAnimation}</style>
+
+      {/* ===== 顶部导航 ===== */}
+      <nav className="relative z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 sticky top-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <div className="flex items-center gap-2.5">
+              {/* Logo 图标 */}
+              <div className="relative w-9 h-9">
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 shadow-lg shadow-brand-500/30 animate-pulse" />
+                <svg className="relative z-10 w-5 h-5 text-white m-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                 </svg>
               </div>
-              <span className="font-bold text-gray-900 dark:text-white text-lg">简历面试AI助手</span>
+              <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">
+                简历面试<span className="text-brand-600 dark:text-brand-400">AI</span>助手
+              </span>
             </div>
+
             <div className="flex items-center gap-3">
-              {user ? (
-                <>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">{user.name || user.email}</span>
-                  <button onClick={handleLogout} className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">退出登录</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => navigate('/login')} className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">登录</button>
-                  <button onClick={() => navigate('/register')} className="text-sm bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors">注册</button>
-                </>
-              )}
-              <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title={dark ? '切换到浅色模式' : '切换到深色模式'}>
-                {dark ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
+              <button
+                onClick={() => navigate('/login')}
+                className="text-sm text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 px-4 py-1.5 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition-all duration-300"
+              >
+                登录
               </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="text-sm bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white px-5 py-1.5 rounded-lg font-semibold shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-0.5 transition-all duration-300"
+              >
+                免费注册
+              </button>
+              <ThemeToggle />
             </div>
           </div>
         </div>
       </nav>
 
       {/* ===== Hero 区域 ===== */}
-      <section className="relative overflow-hidden pt-20 pb-24 sm:pt-28 sm:pb-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/80 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900" />
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-200/20 dark:bg-indigo-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-200/20 dark:bg-purple-900/10 rounded-full blur-3xl" />
+      <section className="relative pt-24 pb-32 sm:pt-32 sm:pb-40 lg:pt-40 lg:pb-48">
+        <HeroBg />
 
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium mb-8 border border-indigo-100 dark:border-indigo-800">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* 标签 */}
+          <div className={`inline-flex items-center gap-2 px-5 py-2 rounded-full bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-sm font-semibold mb-8 border border-brand-200/50 dark:border-brand-700/50 ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
+            style={{ animationDelay: '0.1s' }}
+          >
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500" />
             </span>
-            AI 驱动的求职全流程助手 · 山东省大学生软件设计大赛参赛作品
+            AI 驱动 · 山东省大学生软件设计大赛参赛作品
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-white mb-6 leading-[1.1]">
-            从简历到 Offer
+          {/* 主标题 */}
+          <h1 className={`text-5xl sm:text-6xl lg:text-7xl font-extrabold text-gray-900 dark:text-white mb-6 leading-[1.05] tracking-tight ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
+            style={{ animationDelay: '0.25s' }}
+          >
+            用 AI 重新定义
             <br />
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AI 全程护航
+            <span className="relative">
+              <span className="bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-500 bg-clip-text text-transparent">
+                求职与招聘
+              </span>
+              {/* 标题下方装饰线 */}
+              <svg className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-2" viewBox="0 0 120 8">
+                <path d="M0 4 Q30 0 60 4 Q90 8 120 4" stroke="url(#grad)" strokeWidth="3" fill="none" strokeLinecap="round" className="animate-pulse" />
+                <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#4f46e5" /><stop offset="100%" stopColor="#06b6d4" /></linearGradient></defs>
+              </svg>
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed">
-            智能简历分析、AI 简历评分、模拟面试、求职攻略、简历模板、AI 人岗匹配、简历优化、面试问题——九大核心功能，
+          {/* 副标题 */}
+          <p className={`text-xl sm:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-14 leading-relaxed ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
+            style={{ animationDelay: '0.4s' }}
+          >
+            从简历分析到模拟面试，从智能招聘到数据决策——
             <br className="hidden sm:inline" />
-            助你精准定位短板，全面提升求职竞争力，拿下心仪 Offer。
+            <span className="font-semibold text-gray-800 dark:text-gray-100">一站式 AI 求职辅助平台</span>，助你高效拿下心仪 Offer
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => navigate(user ? '/interviews' : '/register')}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 text-base"
-            >
-              {user ? '开始模拟面试' : '免费开始使用'} →
-            </button>
-            <button
-              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 transition-all duration-300 text-base"
-            >
-              了解更多 ↓
-            </button>
+          {/* 角色选择卡片 */}
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
+            style={{ animationDelay: '0.6s' }}
+          >
+            {/* 求职者卡片 */}
+            <RoleCard
+              onClick={() => navigate('/home')}
+              gradientFrom="from-brand-500"
+              gradientTo="to-cyan-500"
+              iconBg="from-brand-600 to-brand-500"
+              icon={
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              }
+              title="我是求职者"
+              subtitle="上传简历 · AI 评分 · 模拟面试 · 求职攻略"
+              features={['AI 简历评分', '模拟面试', '人岗匹配分析', '求职攻略']}
+              cta="开始使用 →"
+              accentColor="brand"
+            />
+
+            {/* 企业卡片 */}
+            <RoleCard
+              onClick={() => navigate('/enterprise/marketing')}
+              gradientFrom="from-violet-500"
+              gradientTo="to-purple-500"
+              iconBg="from-violet-600 to-purple-500"
+              icon={
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                </svg>
+              }
+              title="我是企业 / HR"
+              subtitle="发布职位 · 简历筛选 · AI 面试 · 数据分析"
+              features={['AI 简历筛选', '一键发布职位', '自动化面试评估']}
+              cta="了解详情 →"
+              accentColor="violet"
+            />
           </div>
 
           {/* 信任标识 */}
-          <div className="flex items-center justify-center gap-6 mt-12 text-sm text-gray-400 dark:text-gray-500">
-            <span>✓ 无需下载</span>
-            <span>✓ 免费使用</span>
-            <span>✓ 数据安全</span>
+          <div className={`flex flex-wrap items-center justify-center gap-6 mt-14 text-sm text-gray-400 dark:text-gray-500 ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
+            style={{ animationDelay: '0.9s' }}
+          >
+            {['即开即用', '免费使用', '数据安全', 'AI 驱动'].map((t, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                {t}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ===== 痛点分析 ===== */}
-      <section className="bg-gray-50 dark:bg-gray-800/30 py-20 sm:py-24" id="painpoints">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              求职路上的那些「坑」，你踩过几个？
+      {/* ===== 核心价值 ===== */}
+      <section className="relative py-20 sm:py-28 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-500" />
+        <div className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+          }}
+        />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+              为什么选择我们？
             </h2>
-            <p className="text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-              数据显示，83%的应届生在求职过程中遇到过以下问题。你不是一个人。
+            <p className="text-brand-100 text-base max-w-xl mx-auto">
+              不堆砌数字，只用真实的产品能力说话
             </p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {painPoints.map((p, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-                <div className="text-3xl mb-4">{p.icon}</div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{p.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{p.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 功能展示 ===== */}
-      <section className="py-20 sm:py-24 dark:bg-gray-900" id="features">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              九大核心功能，覆盖求职全流程
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400">从简历制作到面试通过，AI 做你的私人求职教练</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((f, i) => {
-              const c = colorMap[f.color]
-              return (
-                <div
-                  key={i}
-                  onClick={() => navigate(user ? f.path : '/register')}
-                  className="group relative bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-transparent transition-all duration-300 cursor-pointer"
-                >
-                  <div className={`mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl ${c.solidBg} text-white shadow-md`}>
-                    {f.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-indigo-600 transition-colors">
-                    {f.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 text-sm">
-                    {f.desc}
-                  </p>
-                  <div className={`flex items-center ${c.actionText} dark:text-gray-300 font-medium text-sm`}>
-                    {user ? f.action : '免费试用'}
-                    <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 为什么选择我们 ===== */}
-      <section className="bg-gray-50 dark:bg-gray-800/30 py-20 sm:py-24">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              为什么选择 AI 求职助手？
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400">专为大学生设计的求职辅助工具，更懂你的需求</p>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {advantages.map((a, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm text-center hover:shadow-md transition-shadow duration-300">
-                <div className="text-3xl mb-4">{a.icon}</div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{a.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{a.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 使用流程 ===== */}
-      <section className="py-20 sm:py-24 dark:bg-gray-900">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              9 步求职全流程
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400">从简历优化到面试通关，AI 全程陪伴</p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-10">
-            {[
-              { step: '1', title: '上传简历', desc: '支持 PDF/Word 格式，AI 自动解析内容结构' },
-              { step: '2', title: '简历评分', desc: 'AI 多维度评分，诊断短板并给出改进建议' },
-              { step: '3', title: '简历优化', desc: 'AI 深度优化简历表达，提升关键词覆盖' },
-              { step: '4', title: '人岗匹配', desc: 'AI 分析简历与目标岗位的匹配度' },
-              { step: '5', title: '面试问题', desc: 'AI 根据岗位生成高频面试问题' },
-              { step: '6', title: '模拟面试', desc: '基于简历生成个性化面试题，实时对话评估' },
-              { step: '7', title: '求职攻略', desc: 'AI 提供求职全阶段实用建议和工具' },
-              { step: '8', title: '查看报告', desc: '获取多维度评分和针对性提升建议' },
-              { step: '9', title: '简历模板', desc: '5 款专业模板，一键生成精美简历' },
-            ].map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-lg font-bold flex items-center justify-center mx-auto mb-3 shadow-lg shadow-indigo-500/25">
-                  {s.step}
+            {values.map((v, i) => (
+              <div
+                key={i}
+                className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 animate-fade-in-up"
+                style={{ animationDelay: `${0.2 + i * 0.15}s`, opacity: 0 }}
+              >
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white mb-4">
+                  {v.icon}
                 </div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">{s.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{s.desc}</p>
+                <h3 className="text-lg font-bold text-white mb-2">{v.title}</h3>
+                <p className="text-brand-100 text-sm leading-relaxed">{v.desc}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ===== CTA 区域 ===== */}
-      <section className="bg-gradient-to-r from-indigo-600 to-purple-600 py-16 sm:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-            准备好，拿下心仪的 Offer 了吗？
-          </h2>
-          <p className="text-indigo-100 text-lg mb-8 max-w-xl mx-auto">
-            免费注册，立即体验 AI 驱动的求职辅助。已有数千名同学通过我们提升了面试表现。
-          </p>
-          <button
-            onClick={() => navigate(user ? '/interviews' : '/register')}
-            className="px-8 py-3.5 rounded-xl bg-white text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors text-base shadow-lg"
-          >
-            {user ? '进入面试中心 →' : '免费注册，开始使用 →'}
-          </button>
         </div>
       </section>
 
       {/* ===== 底部 Footer ===== */}
       <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <span className="font-bold text-white text-lg">简历面试AI助手</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+              </svg>
             </div>
+            <span className="font-bold text-white text-lg">简历面试AI助手</span>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-sm text-center">
+          <div className="border-t border-gray-800 pt-8 text-sm">
             © 2026 简历面试AI助手 · 山东省大学生软件设计大赛参赛作品
           </div>
         </div>
       </footer>
+    </div>
+  )
+}
+
+/* ── 角色选择卡片组件 ── */
+function RoleCard({
+  onClick, gradientFrom, gradientTo, iconBg, icon, title, subtitle, features, cta, accentColor,
+}: {
+  onClick: () => void
+  gradientFrom: string
+  gradientTo: string
+  iconBg: string
+  icon: React.ReactNode
+  title: string
+  subtitle: string
+  features: string[]
+  cta: string
+  accentColor: 'brand' | 'violet'
+}) {
+  const isBrand = accentColor === 'brand'
+  const textColor = isBrand ? 'text-brand-600 dark:text-brand-400' : 'text-violet-600 dark:text-violet-400'
+  const borderHover = isBrand ? 'hover:border-brand-300 dark:hover:border-brand-600' : 'hover:border-violet-300 dark:hover:border-violet-600'
+  const shadowHover = isBrand ? 'hover:shadow-brand-500/20' : 'hover:shadow-violet-500/20'
+
+  return (
+    <div
+      onClick={onClick}
+      className={`group relative bg-white dark:bg-gray-800 rounded-2xl p-10 border border-gray-200 dark:border-gray-700 shadow-xl hover:shadow-2xl hover:-translate-y-2 ${borderHover} ${shadowHover} transition-all duration-500 cursor-pointer overflow-hidden`}
+    >
+      {/* 悬停渐变背景 */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} ${gradientTo} opacity-0 group-hover:opacity-5 dark:group-hover:opacity-10 transition-opacity duration-500`} />
+
+      {/* 左上装饰圆 */}
+      <div className={`absolute -top-6 -left-6 w-24 h-24 rounded-full bg-gradient-to-br ${gradientFrom} ${gradientTo} opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-500`} />
+
+      <div className="relative">
+        {/* 图标 */}
+        <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${iconBg} flex items-center justify-center mx-auto mb-8 shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+          {icon}
+        </div>
+
+        {/* 标题 */}
+        <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
+          {title}
+        </h3>
+
+        {/* 副标题 */}
+        <p className="text-sm text-gray-400 dark:text-gray-500 mb-8 font-medium">
+          {subtitle}
+        </p>
+
+      <div className="space-y-3 mb-10 text-left">
+          {features.map((f, i) => (
+            <div key={i} className="flex items-center gap-3 text-gray-700 dark:text-gray-200">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 ${
+                accentColor === 'brand'
+                  ? 'bg-brand-100 dark:bg-brand-900/40'
+                  : 'bg-violet-100 dark:bg-violet-900/40'
+              }`}
+                style={{ transitionDelay: `${i * 50}ms` }}
+              >
+                <svg className={`w-3.5 h-3.5 ${
+                  accentColor === 'brand' ? 'text-brand-600 dark:text-brand-400' : 'text-violet-600 dark:text-violet-400'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className={`inline-flex items-center gap-2 ${textColor} font-bold group-hover:gap-3 transition-all duration-300`}>
+          {cta.replace(' →', '')}
+          <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          </svg>
+        </div>
+      </div>
     </div>
   )
 }

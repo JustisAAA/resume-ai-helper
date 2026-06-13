@@ -49,3 +49,12 @@ Thumbs.db
 # ===== 其他 =====
 coverage/
 .nyc_output/
+
+# ===== AI 工作文件 =====
+.workbuddy/
+.codebuddy/
+.learnings/
+
+# ===== 临时测试文件 =====
+*.backup
+/backend/prisma/dev.db.backup

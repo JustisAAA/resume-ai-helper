@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 
 /* ── 图标组件 ── */
@@ -14,6 +14,12 @@ const GearIcon = ({ className }: { className?: string }) => (
 const PersonIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  </svg>
+);
+
+const FlagIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
   </svg>
 );
 
@@ -32,18 +38,12 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { dark, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
-
-  useEffect(() => {
-    if (!token || !user || user.role !== 'ADMIN') {
-      navigate('/login');
-    }
-  }, [token, user, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -54,6 +54,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const navItems = [
     { path: '/admin', label: '系统概览', icon: <GearIcon className="w-5 h-5" /> },
     { path: '/admin/users', label: '用户管理', icon: <PersonIcon className="w-5 h-5" /> },
+    { path: '/admin/reports', label: '举报管理', icon: <FlagIcon className="w-5 h-5" /> },
   ];
 
   return (
@@ -114,7 +115,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         `}>
           <nav className="p-4 space-y-1 overflow-y-auto h-full">
             {navItems.map(item => {
-              const isActive = window.location.pathname === item.path;
+              const isActive = location.pathname === item.path;
               return (
                 <button
                   key={item.path}

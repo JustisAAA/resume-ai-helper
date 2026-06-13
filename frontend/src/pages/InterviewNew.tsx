@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useTheme } from '../context/ThemeContext'
+import ThemeToggle from '../components/ThemeToggle'
 import { interviewAPI, resumeAPI } from '../services/api'
 import { interviewSchema, type InterviewFormData } from '../schemas/interviewSchema'
+import ErrorAlert from '../components/ErrorAlert'
+import EmptyState from '../components/EmptyState'
 
 interface Resume {
   id: string
@@ -17,7 +19,6 @@ export default function InterviewNew() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { dark, toggleTheme } = useTheme()
 
   const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<InterviewFormData>({
     resolver: zodResolver(interviewSchema),
@@ -69,13 +70,13 @@ export default function InterviewNew() {
   ] as const
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
       <nav className="bg-white dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-4 flex justify-between items-center h-16">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/practice')}
               className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               title="返回首页"
             >
@@ -92,28 +93,14 @@ export default function InterviewNew() {
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              title="切换主题"
-            >
-              {dark ? (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
+            <ThemeToggle />
           </div>
         </div>
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 dark:from-purple-700 dark:to-purple-900 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 dark:from-brand-700 dark:to-brand-900 flex items-center justify-center">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
@@ -122,28 +109,19 @@ export default function InterviewNew() {
           <p className="text-gray-500 dark:text-gray-400 mt-1">基于简历内容，AI 为你生成个性化面试题</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8">
-          {error && (
-            <div className="mb-6 p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
-              {error}
-            </div>
-          )}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8">
+          {error && <ErrorAlert message={error} />}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* 选择简历 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">选择简历 *</label>
               {resumes.length === 0 ? (
-                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-sm">
-                  你还没有简历，请先
-                  <a href="/resumes/upload" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium ml-1">
-                    上传简历
-                  </a>
-                </div>
+                <EmptyState title="还没有简历" description="请先上传简历才能进行模拟面试" />
               ) : (
                 <select
                   {...register('resumeId')}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 focus:border-transparent transition"
                 >
                   <option value="">请选择简历...</option>
                   {resumes.map(r => (
@@ -165,7 +143,7 @@ export default function InterviewNew() {
                 type="text"
                 {...register('position')}
                 placeholder="例如：前端工程师、产品经理、数据分析师"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 focus:border-transparent transition"
               />
               {errors.position && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.position.message}</p>
@@ -193,7 +171,7 @@ export default function InterviewNew() {
                       }}
                       className={`
                         cursor-pointer rounded-xl border-2 p-4 text-center transition-all duration-200
-                        ${isSelected ? `${c.border} ${c.bg} ring-2 ${c.ring}` : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'}
+                        ${isSelected ? `${c.border} ${c.bg} ring-2 ${c.ring}` : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'}
                       `}
                     >
                       <div className={`font-bold text-sm mb-1 ${isSelected ? c.text : 'text-gray-900 dark:text-white'}`}>
@@ -212,7 +190,7 @@ export default function InterviewNew() {
             <button
               type="submit"
               disabled={loading || resumes.length === 0}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium shadow-lg shadow-purple-500/25 dark:shadow-purple-400/25 hover:shadow-purple-500/40 dark:hover:shadow-purple-400/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 text-white font-medium shadow-lg shadow-brand-500/25 dark:shadow-brand-400/25 hover:shadow-brand-500/40 dark:hover:shadow-brand-400/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? '创建中...' : '开始面试'}
             </button>

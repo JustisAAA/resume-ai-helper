@@ -1,0 +1,335 @@
+// Prisma Schema for 简历面试AI助手 - Serverless版
+// 支持 PostgreSQL（生产/云函数）和 SQLite（本地开发）
+// 通过 DATABASE_URL 环境变量控制：
+//   PostgreSQL: postgresql://user:pass@host:5432/db
+//   SQLite:     file:./dev.db
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 枚举定义
+enum Role {
+  USER
+  HR
+  ENTERPRISE
+  ADMIN
+}
+
+enum Status {
+  ACTIVE
+  BANNED
+}
+
+enum ResumeStatus {
+  DRAFT
+  ANALYZED
+  ARCHIVED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Language {
+  ZH_CN
+  EN_US
+}
+
+enum AIRole {
+  PROFESSIONAL
+  FRIENDLY
+  STRICT
+}
+
+enum InterviewStatus {
+  CREATED
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum InterviewType {
+  PRACTICE
+  ENTERPRISE
+}
+
+enum ReportType {
+  RESUME_ANALYSIS
+  INTERVIEW_REPORT
+  COMPREHENSIVE
+}
+
+// 职位状态枚举
+enum JobStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+  DELETED
+}
+
+// 申请状态枚举
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+}
+
+// 用户模型
+model User {
+  id                 String        @id @default(uuid())
+  email              String        @unique @map("email")
+  passwordHash        String        @map("password_hash")
+  name               String?       @map("name")
+  avatar             String?       @map("avatar")
+  role               Role          @default(USER) @map("role")
+  status             Status        @default(ACTIVE) @map("status")
+  creditScore        Int           @default(100) @map("credit_score")
+  isBanned           Boolean       @default(false) @map("is_banned")
+  resumes            Resume[]
+  interviews         Interview[]
+  reports            InterviewReport[] @relation("UserInterviewReports")
+  enterprise         Enterprise?
+  ownedEnterprises   Enterprise[]  @relation("EnterpriseOwner")
+  hrAccount          HRAccount?
+  applications       Application[]
+  sentMessages       Message[]      @relation("SentMessages")
+  receivedMessages   Message[]      @relation("ReceivedMessages")
+  complaintsMade     Complaint[]    @relation("ComplaintsMade")
+  complaintsReceived Complaint[]   @relation("ComplaintsReceived")
+  complaintsHandled  Complaint[]   @relation("ComplaintsHandled")
+  creditRecords      CreditRecord[]
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// 简历模型
+model Resume {
+  id           String         @id @default(uuid())
+  userId       String         @map("user_id")
+  title        String         @map("title")
+  content      Json?          @map("content")
+  rawText      String?        @map("raw_text")
+  fileName     String?        @map("file_name")
+  fileUrl      String?        @map("file_url")
+  fileType     String?        @map("file_type")
+  analysis     Json?          @map("analysis")
+  score        Int?           @map("score")
+  analyzedAt   DateTime?      @map("analyzed_at")
+  status       ResumeStatus   @default(DRAFT) @map("status")
+  isDefault    Boolean        @default(false) @map("is_default")
+  interviews   Interview[]
+  reports      InterviewReport[]
+  applications Application[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("resumes")
+}
+
+// 面试模型
+model Interview {
+  id            String           @id @default(uuid())
+  userId        String           @map("user_id")
+  resumeId      String?          @map("resume_id")
+  applicationId String?          @map("application_id")
+  title         String           @map("title")
+  position      String?          @map("position")
+  difficulty    Difficulty       @default(MEDIUM) @map("difficulty")
+  language      Language         @default(ZH_CN) @map("language")
+  aiRole        AIRole           @default(PROFESSIONAL) @map("ai_role")
+  questions     Json             @map("questions")
+  answers       Json?            @map("answers")
+  messages      Json?            @map("messages")
+  feedback      Json?            @map("feedback")
+  score         Int?             @map("score")
+  status        InterviewStatus  @default(CREATED) @map("status")
+  type          InterviewType    @default(PRACTICE) @map("type")
+  startedAt     DateTime?        @map("started_at")
+  completedAt   DateTime?        @map("completed_at")
+  reportId      String?          @unique @map("report_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume        Resume?          @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  application   Application?     @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  report        InterviewReport?  @relation
+
+  @@map("interviews")
+}
+
+// 面试报告模型
+model InterviewReport {
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+  resumeId       String?        @map("resume_id")
+  interviewId    String?        @unique @map("interview_id")
+  type           ReportType     @map("type")
+  title          String         @map("title")
+  content        Json           @map("content")
+  summary        String         @map("summary")
+  score          Int?           @map("score")
+  recommendations Json?      @map("recommendations")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  user           User           @relation("UserInterviewReports", fields: [userId], references: [id], onDelete: Cascade)
+  resume         Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  interview      Interview?      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+// 企业模型
+model Enterprise {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  ownerId      String?  @map("owner_id")
+  name         String   @map("name")
+  description  String?  @map("description")
+  logo         String?  @map("logo")
+  website      String?  @map("website")
+  industry     String?  @map("industry")
+  size         String?  @map("size")
+  location     String?  @map("location")
+  contactEmail String?  @map("contact_email")
+  contactPhone String?  @map("contact_phone")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  owner      User?         @relation("EnterpriseOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  jobs       Job[]
+  hrAccounts HRAccount[]
+
+  @@map("enterprises")
+}
+
+// 职位模型
+model Job {
+  id           String    @id @default(uuid())
+  enterpriseId String    @map("enterprise_id")
+  title        String    @map("title")
+  description  String    @map("description")
+  requirements String?   @map("requirements")
+  salaryRange  String?   @map("salary_range")
+  location     String?   @map("location")
+  type         String?   @map("type")
+  status       JobStatus @default(ACTIVE) @map("status")
+  keywords     Json      @map("keywords")
+  images       Json      @map("images")
+  interviewConfig Json?  @map("interview_config")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  enterprise   Enterprise       @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  applications Application[]
+  messages     Message[]
+  hrAccount    HRAccount?
+
+  @@map("jobs")
+}
+
+// HR子账号模型
+model HRAccount {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  enterpriseId String   @map("enterprise_id")
+  jobId        String   @unique @map("job_id")
+  name         String   @map("name")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enterprise Enterprise @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  job        Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("hr_accounts")
+}
+
+// 申请模型
+model Application {
+  id          String             @id @default(uuid())
+  jobId       String             @map("job_id")
+  userId      String             @map("user_id")
+  resumeId    String?            @map("resume_id")
+  status      ApplicationStatus  @default(PENDING) @map("status")
+  coverLetter String?            @map("cover_letter")
+  aiAnalysis  Json?              @map("ai_analysis")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume      Resume?     @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  interviews  Interview[]
+
+  @@unique([jobId, userId])
+  @@map("applications")
+}
+
+// 消息表（聊天记录）
+model Message {
+  id          String   @id @default(uuid())
+  senderId    String   @map("sender_id")
+  receiverId  String   @map("receiver_id")
+  jobId       String?  @map("job_id")
+  content     String
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  job        Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([senderId, receiverId])
+  @@index([jobId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// 举报表（投诉）
+model Complaint {
+  id           String   @id @default(uuid())
+  reporterId   String   @map("reporter_id")
+  targetId     String   @map("target_id")
+  reason       String
+  description  String?
+  status       String   @default("PENDING") @map("status")
+  handlerId    String?  @map("handler_id")
+  handledAt    DateTime? @map("handled_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  reporter     User     @relation("ComplaintsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  target       User     @relation("ComplaintsReceived", fields: [targetId], references: [id], onDelete: Cascade)
+  handler      User?    @relation("ComplaintsHandled", fields: [handlerId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("complaints")
+}
+
+// 信用分记录表
+model CreditRecord {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  score               Int
+  change              Int
+  reason              String
+  relatedComplaintId String?  @map("related_complaint_id")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("credit_records")
+}

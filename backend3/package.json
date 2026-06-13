@@ -1,0 +1,41 @@
+{
+  "name": "resume-ai-helper-serverless",
+  "version": "1.0.0",
+  "description": "简历面试AI助手 - Serverless 云函数版",
+  "main": "dist/handler.js",
+  "scripts": {
+    "dev": "chcp 65001 >nul && node scripts/kill-port.js 3002 && npx ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "NODE_ENV=production node dist/index.js",
+    "start:win": "set NODE_ENV=production && node dist/index.js",
+    "setup": "npm install && npx prisma generate && npx prisma db push",
+    "postinstall": "npx prisma generate",
+    "railway:build": "npm install && npx prisma generate && npx prisma db push && npm run build",
+    "railway:start": "NODE_ENV=production node dist/index.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.5.2",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.12.0",
+    "multer": "^2.1.1",
+    "pdf-parse": "^2.4.5",
+    "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^20.10.6",
+    "@types/serverless-http": "^3.0.4",
+    "prisma": "^6.19.3",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}

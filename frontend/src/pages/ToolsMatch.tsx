@@ -1,8 +1,9 @@
-import { useState } from 'react'
+﻿import { useState, useRef } from 'react'
+import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 
-import { useTheme } from '../context/ThemeContext'
 import { toolsAPI } from '../services/api'
+import { ButtonSpinner } from '../components/Loading'
 
 interface MatchResult {
   overall_score?: number;
@@ -58,8 +59,6 @@ const EXAMPLE_JD = `岗位名称：高级前端开发工程师
 6. 有性能优化、前端架构设计经验者优先`
 
 export default function ToolsMatch() {
-  const { dark, toggleTheme } = useTheme()
-
   const [resumeActiveTab, setResumeActiveTab] = useState<'upload' | 'text'>('text')
   const [jdActiveTab, setJdActiveTab] = useState<'upload' | 'text'>('text')
   const [resumeText, setResumeText] = useState('')
@@ -73,8 +72,8 @@ export default function ToolsMatch() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<MatchResult | null>(null)
-  const resumeFileRef = { current: null as HTMLInputElement | null }
-  const jdFileRef = { current: null as HTMLInputElement | null }
+  const resumeFileRef = useRef<HTMLInputElement>(null)
+  const jdFileRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
   const getScoreColor = (score: number) => {
@@ -140,12 +139,12 @@ export default function ToolsMatch() {
   const handleReset = () => { setResult(null); setResumeText(''); setJdText(''); setResumeFile(null); setJdFile(null); setError('') }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
       <nav className="bg-white dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-4 flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/')} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors">
+            <button onClick={() => navigate('/practice')} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center shadow-sm">
@@ -153,17 +152,8 @@ export default function ToolsMatch() {
             </div>
             <span className="font-bold text-gray-900 dark:text-white">JD 匹配打分</span>
           </div>
-          <button onClick={toggleTheme} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title={dark ? '浅色模式' : '深色模式'}>
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
+<ThemeToggle />
+
         </div>
       </nav>
 
@@ -174,7 +164,7 @@ export default function ToolsMatch() {
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">JD 匹配打分</h1>
-          <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">AI 分析简历与职位描述的匹配度，找出差距</p>
+          <p className="text-gray-500 dark:text-gray-500 mt-1">AI 分析简历与职位描述的匹配度，找出差距</p>
         </div>
 
         {/* 有结果：显示结果 */}
@@ -182,13 +172,13 @@ export default function ToolsMatch() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">分析结果</h2>
-              <button onClick={handleReset} className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:bg-indigo-900/20 transition-colors font-medium">
+              <button onClick={handleReset} className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 px-3 py-1.5 rounded-lg hover:bg-brand-50 dark:bg-brand-900/20 transition-colors font-medium">
                 ← 重新分析
               </button>
             </div>
 
             {/* 总分 */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-rose-50 to-rose-100/50 px-6 py-4 border-b border-rose-200/50 flex items-center justify-center">
                 <div className="text-center">
                   <div className={`text-5xl font-black ${getScoreTextColor(result.overall_score || 0)}`}>{result.overall_score || 0}</div>
@@ -204,8 +194,8 @@ export default function ToolsMatch() {
 
             {/* 维度分析 */}
             {result.dimension_scores && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 px-6 py-4 border-b border-indigo-200/50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">维度分析</h3>
                 </div>
                 <div className="p-6 space-y-4">
@@ -213,7 +203,7 @@ export default function ToolsMatch() {
                     const labels: Record<string, string> = { hard_skills: '硬技能', soft_skills: '软技能', experience: '经验', education: '学历', potential: '潜力' }
                     return (
                       <div key={key}>
-                        <div className="flex justify-between text-sm mb-1"><span className="text-gray-600 dark:text-gray-400 dark:text-gray-500">{labels[key] || key}</span><span className={`font-medium ${getScoreTextColor(val)}`}>{val}</span></div>
+                        <div className="flex justify-between text-sm mb-1"><span className="text-gray-600 dark:text-gray-500">{labels[key] || key}</span><span className={`font-medium ${getScoreTextColor(val)}`}>{val}</span></div>
                         <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5"><div className={`h-2.5 rounded-full ${getScoreColor(val)}`} style={{ width: `${val}%` }} /></div>
                       </div>
                     )
@@ -223,8 +213,8 @@ export default function ToolsMatch() {
             )}
 
             {/* 关键词分析 */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 px-6 py-4 border-b border-emerald-200/50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                 <h3 className="font-bold text-gray-900 dark:text-white">关键词分析</h3>
               </div>
               <div className="p-6">
@@ -253,7 +243,7 @@ export default function ToolsMatch() {
 
             {/* 过度包装词 */}
             {result.overpackaging_words && result.overpackaging_words.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-yellow-50 to-yellow-100/50 px-6 py-4 border-b border-yellow-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">⚠️ 过度包装词检测</h3>
                 </div>
@@ -276,7 +266,7 @@ export default function ToolsMatch() {
 
             {/* 技能匹配矩阵 */}
             {result.skill_matrix && result.skill_matrix.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 px-6 py-4 border-b border-blue-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">🔍 技能匹配矩阵</h3>
                 </div>
@@ -311,24 +301,24 @@ export default function ToolsMatch() {
 
             {/* 分析建议 */}
             {result.analysis && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 px-6 py-4 border-b border-amber-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">分析建议</h3>
                 </div>
-                <div className="p-6"><p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600 leading-relaxed whitespace-pre-wrap">{result.analysis}</p></div>
+                <div className="p-6"><p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{result.analysis}</p></div>
               </div>
             )}
 
             {/* 建议列表 */}
             {result.suggestions && result.suggestions.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 px-6 py-4 border-b border-purple-200/50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">💡 改进建议</h3>
                 </div>
                 <div className="p-6">
                   <ul className="space-y-2">
                     {result.suggestions.map((tip: string, idx: number) => (
-                      <li key={idx} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600"><span className="text-indigo-500 mt-0.5">•</span><span>{tip}</span></li>
+                      <li key={idx} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300"><span className="text-brand-500 mt-0.5">•</span><span>{tip}</span></li>
                     ))}
                   </ul>
                 </div>
@@ -337,8 +327,8 @@ export default function ToolsMatch() {
 
             {/* 段落分析 */}
             {result.section_analysis && result.section_analysis.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-teal-50 to-teal-100/50 px-6 py-4 border-b border-teal-200/50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">📊 段落匹配分析</h3>
                 </div>
                 <div className="p-6 space-y-4">
@@ -361,7 +351,7 @@ export default function ToolsMatch() {
           </div>
         ) : (
           /* 无结果：输入表单 */
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             {/* 简历输入区 */}
             <div className="border-b border-gray-100 dark:border-gray-800">
               <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
@@ -369,23 +359,23 @@ export default function ToolsMatch() {
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleFillExample('resume')} className="text-xs text-rose-600 hover:text-rose-800 px-2 py-1 rounded-md hover:bg-rose-50 transition-colors font-medium">✨ 填入示例</button>
                   <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                    <button onClick={() => { setResumeActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${resumeActiveTab === 'text' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
-                    <button onClick={() => { setResumeActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${resumeActiveTab === 'upload' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
+                    <button onClick={() => { setResumeActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${resumeActiveTab === 'text' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
+                    <button onClick={() => { setResumeActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${resumeActiveTab === 'upload' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
                   </div>
                 </div>
               </div>
               <div className="p-6">
                 {resumeActiveTab === 'upload' ? (
                   <div>
-                    <input ref={el => { resumeFileRef.current = el }} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleResumeFileChange} className="hidden" />
-                    <div onClick={() => resumeFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 hover:border-rose-400 hover:bg-rose-50/30 cursor-pointer transition-colors">
+                    <input ref={resumeFileRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleResumeFileChange} className="hidden" />
+                    <div onClick={() => resumeFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-rose-400 hover:bg-rose-50/30 cursor-pointer transition-colors">
                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">{resumeFile ? <span className="text-rose-600 font-medium">{resumeFile.name}</span> : '点击选择文件'}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-500">{resumeFile ? <span className="text-rose-600 font-medium">{resumeFile.name}</span> : '点击选择文件'}</span>
                     </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
                       {parsingResume ? (
                         <span className="inline-flex items-center gap-1">
-                          <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="60" strokeDashoffset="10" /></svg>
+                          <ButtonSpinner />
                           正在解析文件...
                         </span>
                       ) : parsedResumeText ? (
@@ -396,7 +386,7 @@ export default function ToolsMatch() {
                     </p>
                   </div>
                 ) : (
-                  <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} rows={8} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none resize-none text-sm" placeholder="粘贴你的简历内容..." />
+                  <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} rows={8} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-rose-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none text-sm" placeholder="粘贴你的简历内容..." />
                 )}
               </div>
             </div>
@@ -408,23 +398,23 @@ export default function ToolsMatch() {
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleFillExample('jd')} className="text-xs text-rose-600 hover:text-rose-800 px-2 py-1 rounded-md hover:bg-rose-50 transition-colors font-medium">✨ 填入示例</button>
                   <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                    <button onClick={() => { setJdActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${jdActiveTab === 'text' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
-                    <button onClick={() => { setJdActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${jdActiveTab === 'upload' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
+                    <button onClick={() => { setJdActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${jdActiveTab === 'text' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
+                    <button onClick={() => { setJdActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${jdActiveTab === 'upload' ? 'bg-rose-50 text-rose-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
                   </div>
                 </div>
               </div>
               <div className="p-6 space-y-5">
                 {jdActiveTab === 'upload' ? (
                   <div>
-                    <input ref={el => { jdFileRef.current = el }} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleJdFileChange} className="hidden" />
-                    <div onClick={() => jdFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 hover:border-rose-400 hover:bg-rose-50/30 cursor-pointer transition-colors">
+                    <input ref={jdFileRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleJdFileChange} className="hidden" />
+                    <div onClick={() => jdFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-rose-400 hover:bg-rose-50/30 cursor-pointer transition-colors">
                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">{jdFile ? <span className="text-rose-600 font-medium">{jdFile.name}</span> : '点击选择文件'}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-500">{jdFile ? <span className="text-rose-600 font-medium">{jdFile.name}</span> : '点击选择文件'}</span>
                     </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
                       {parsingJd ? (
                         <span className="inline-flex items-center gap-1">
-                          <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="60" strokeDashoffset="10" /></svg>
+                          <ButtonSpinner />
                           正在解析文件...
                         </span>
                       ) : parsedJdText ? (
@@ -435,13 +425,13 @@ export default function ToolsMatch() {
                     </p>
                   </div>
                 ) : (
-                  <textarea value={jdText} onChange={e => setJdText(e.target.value)} rows={8} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none resize-none text-sm" placeholder="粘贴职位描述（JD）内容..." />
+                  <textarea value={jdText} onChange={e => setJdText(e.target.value)} rows={8} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-rose-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none text-sm" placeholder="粘贴职位描述（JD）内容..." />
                 )}
 
                 {error && <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 text-red-700 text-sm">{error}</div>}
 
                 <button onClick={handleSubmit} disabled={loading || (resumeActiveTab === 'text' ? !resumeText.trim() : !resumeFile) || (jdActiveTab === 'text' ? !jdText.trim() : !jdFile)} className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white font-medium shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  {loading ? (<> <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> AI 分析中... </>) : (<> <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg> AI 匹配分析 </>)}
+                  {loading ? (<> <ButtonSpinner /> AI 分析中... </>) : (<> <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg> AI 匹配分析 </>)}
                 </button>
               </div>
             </div>

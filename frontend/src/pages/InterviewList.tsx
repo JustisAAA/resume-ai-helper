@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTheme } from '../context/ThemeContext'
+import ThemeToggle from '../components/ThemeToggle'
 import { interviewAPI, Interview } from '../services/api'
 import { useToast } from '../components/Toast'
+import ErrorAlert from '../components/ErrorAlert'
+import Loading from '../components/Loading'
+import StatusBadge from '../components/StatusBadge'
 
 
 export default function InterviewList() {
@@ -11,7 +14,6 @@ export default function InterviewList() {
   const [error, setError] = useState('')
   const [stats, setStats] = useState({ total: 0, completed: 0, avgScore: 0, totalDuration: 0 })
   const navigate = useNavigate()
-  const { dark, toggleTheme } = useTheme()
   const { showToast } = useToast()
 
   useEffect(() => { fetchInterviews() }, [])
@@ -19,9 +21,10 @@ export default function InterviewList() {
   const fetchInterviews = async () => {
     try {
       const token = localStorage.getItem('token')
-      const data = await interviewAPI.list(token!) as unknown as Interview[]
+      const data = await interviewAPI.list(token!, 'PRACTICE') as any
+      const interviews = data.interviews || []
       // 后端没有 duration 字段，根据 startedAt 和 completedAt 实时计算
-      const processed = data.map((iv: Interview) => {
+      const processed = interviews.map((iv: Interview) => {
         if (!iv.duration && iv.startedAt && iv.completedAt) {
           const start = new Date(iv.startedAt).getTime();
           const end = new Date(iv.completedAt).getTime();
@@ -61,12 +64,6 @@ export default function InterviewList() {
     }
   }
 
-  const statusConfig: Record<string, { bg: string; text: string; label: string; icon: string }> = {
-    COMPLETED: { bg: 'bg-green-100', text: 'text-green-700 dark:text-green-300', label: '已完成', icon: '✅' },
-    IN_PROGRESS: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', label: '进行中', icon: '🔄' },
-    CREATED: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', label: '未开始', icon: '⏳' },
-  }
-
   const difficultyConfig: Record<string, { color: string; label: string; bg: string }> = {
     EASY: { color: 'text-green-700 dark:text-green-300', label: '简单', bg: 'bg-green-50 dark:bg-green-900/30' },
     HARD: { color: 'text-red-700 dark:text-red-300', label: '困难', bg: 'bg-red-50 dark:bg-red-900/30' },
@@ -80,29 +77,22 @@ export default function InterviewList() {
     return `${m}分${s}秒`
   }
 
-  if (loading) return (
-    <div className={`min-h-screen flex items-center justify-center ${dark ? 'bg-gray-950' : 'bg-gradient-to-br from-indigo-50 via-white to-purple-50'}`}>
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400">加载面试记录...</p>
-      </div>
-    </div>
-  )
+  if (loading) return <Loading fullScreen size="md" text="加载面试记录..." />;
 
   return (
-    <div className={`min-h-screen ${dark ? 'bg-gray-950' : 'bg-gradient-to-br from-indigo-50 via-white to-purple-50'}`}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
       <nav className="bg-white dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/practice')}
               className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               title="返回"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
@@ -110,21 +100,7 @@ export default function InterviewList() {
             <span className="font-bold text-gray-900 dark:text-white">简历面试AI助手</span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              title="切换主题"
-            >
-              {dark ? (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
+            <ThemeToggle />
           </div>
         </div>
       </nav>
@@ -138,25 +114,23 @@ export default function InterviewList() {
           </div>
           <button
             onClick={() => navigate('/interviews/new')}
-            className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
+            className="px-5 py-2.5 bg-gradient-to-r from-brand-600 to-brand-600 text-white rounded-xl font-medium shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             开始新面试
           </button>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 text-red-700 dark:text-red-300 text-sm">{error}</div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {/* 统计卡片 */}
         {interviews.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             {[
-              { label: '总面试数', value: stats.total, icon: '📊', color: 'from-indigo-500 to-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
+              { label: '总面试数', value: stats.total, icon: '📊', color: 'from-brand-500 to-brand-600', bg: 'bg-brand-50 dark:bg-brand-900/30' },
               { label: '已完成', value: stats.completed, icon: '✅', color: 'from-green-500 to-green-600', bg: 'bg-green-50 dark:bg-green-900/30' },
               { label: '平均得分', value: stats.avgScore ? `${stats.avgScore}分` : '--', icon: '⭐', color: 'from-amber-500 to-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
-              { label: '总时长', value: formatDuration(stats.totalDuration), icon: '⏱️', color: 'from-purple-500 to-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
+              { label: '总时长', value: formatDuration(stats.totalDuration), icon: '⏱️', color: 'from-brand-500 to-brand-600', bg: 'bg-brand-50 dark:bg-brand-900/30' },
             ].map((stat, i) => (
               <div key={i} className={`${stat.bg} rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm`}>
                 <div className="flex items-center gap-2 mb-3">
@@ -173,7 +147,7 @@ export default function InterviewList() {
 
         {interviews.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center shadow-inner">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-brand-100 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/30 flex items-center justify-center shadow-inner">
               <svg className="w-12 h-12 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
@@ -182,7 +156,7 @@ export default function InterviewList() {
             <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">AI 将基于你的简历生成个性化面试题，实时评估表现并给出详细报告</p>
             <button
               onClick={() => navigate('/interviews/new')}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all duration-300"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-600 text-white rounded-xl font-medium hover:from-brand-700 hover:to-brand-700 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-0.5 transition-all duration-300"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
               开始新面试
@@ -191,18 +165,15 @@ export default function InterviewList() {
         ) : (
           <div className="space-y-4">
             {interviews.map(iv => {
-              const sc = statusConfig[iv.status as keyof typeof statusConfig] || statusConfig.CREATED
               const dc = difficultyConfig[iv.difficulty as keyof typeof difficultyConfig] || difficultyConfig.MEDIUM
               const answerCount = iv.answers?.length || 0
               return (
-                <div key={iv.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-600 transition-all duration-300 group">
+                <div key={iv.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 hover:shadow-lg hover:border-brand-200 dark:hover:border-brand-600 transition-all duration-300 group">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate group-hover:text-indigo-700 dark:text-indigo-300 transition-colors">{iv.title}</h3>
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${sc.bg} ${sc.text}`}>
-                          {sc.icon} {sc.label}
-                        </span>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate group-hover:text-brand-700 dark:text-brand-300 transition-colors">{iv.title}</h3>
+                        <StatusBadge status={iv.status} type="interview" />
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${dc.bg} ${dc.color}`}>{dc.label}</span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
@@ -217,7 +188,7 @@ export default function InterviewList() {
                       {iv.status === 'CREATED' && (
                         <button
                           onClick={() => navigate(`/interviews/${iv.id}/room`)}
-                          className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center gap-1.5"
+                          className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-green-500 to-brand-600 text-white hover:from-green-600 hover:to-brand-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center gap-1.5"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 009 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                           开始面试
@@ -226,7 +197,7 @@ export default function InterviewList() {
                       {iv.status === 'IN_PROGRESS' && (
                         <button
                           onClick={() => navigate(`/interviews/${iv.id}/room`)}
-                          className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center gap-1.5"
+                          className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-600 hover:to-brand-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center gap-1.5"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.072a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                           继续面试
@@ -235,7 +206,7 @@ export default function InterviewList() {
                       {iv.status === 'COMPLETED' && (
                         <button
                           onClick={() => navigate(`/interviews/${iv.id}/report`)}
-                          className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center gap-1.5"
+                          className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-600 hover:to-brand-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center gap-1.5"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                           查看报告

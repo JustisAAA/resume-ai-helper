@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+﻿import { useState, useRef } from 'react'
+import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/Toast'
 import { exportResumeDataToPdf } from '../utils/exportPdf'
 
-import { useTheme } from '../context/ThemeContext'
 import { toolsAPI } from '../services/api'
+import { ButtonSpinner } from '../components/Loading'
 
 interface MatchAnalysis {
   score: number;
@@ -34,8 +35,6 @@ interface BeforeAfterMatchResult {
 }
 
 export default function ToolsOptimize() {
-  const { dark, toggleTheme } = useTheme()
-
   const [activeTab, setActiveTab] = useState<'upload' | 'text'>('text')
   const [file, setFile] = useState<File | null>(null)
   const [resumeText, setResumeText] = useState('')
@@ -159,13 +158,13 @@ export default function ToolsOptimize() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
       <nav className="bg-white dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-4 flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/practice')}
               className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -175,17 +174,8 @@ export default function ToolsOptimize() {
             </div>
             <span className="font-bold text-gray-900 dark:text-white">简历优化</span>
           </div>
-          <button onClick={toggleTheme} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title={dark ? '浅色模式' : '深色模式'}>
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
+<ThemeToggle />
+
         </div>
       </nav>
 
@@ -207,7 +197,7 @@ export default function ToolsOptimize() {
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">优化结果</h2>
               <button
                 onClick={handleReset}
-                className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:bg-indigo-900/20 transition-colors font-medium"
+                className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 px-3 py-1.5 rounded-lg hover:bg-brand-50 dark:bg-brand-900/20 transition-colors font-medium"
               >
                 ← 重新优化
               </button>
@@ -215,7 +205,7 @@ export default function ToolsOptimize() {
 
             {/* 核心亮点 */}
             {result.highlights && result.highlights.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 px-6 py-4 border-b border-amber-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">⭐ 核心亮点</h3>
                 </div>
@@ -233,14 +223,14 @@ export default function ToolsOptimize() {
 
             {/* 能力标签 */}
             {result.skills_tags && result.skills_tags.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 px-6 py-4 border-b border-indigo-200/50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">🏷 能力标签</h3>
                 </div>
                 <div className="p-6">
                   <div className="flex flex-wrap gap-2">
                     {result.skills_tags.map((t: string, idx: number) => (
-                      <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-xs font-medium">
+                      <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 text-xs font-medium">
                         {t}
                       </span>
                     ))}
@@ -251,7 +241,7 @@ export default function ToolsOptimize() {
 
             {/* 岗位匹配分析 */}
             {result.match_analysis && result.match_analysis !== null && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-rose-50 to-rose-100/50 px-6 py-4 border-b border-rose-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">📊 岗位匹配分析</h3>
                 </div>
@@ -262,7 +252,7 @@ export default function ToolsOptimize() {
                   </div>
                   {result.match_analysis.missing_keywords && result.match_analysis.missing_keywords.length > 0 && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mb-2">缺失关键词</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mb-2">缺失关键词</p>
                       <div className="flex flex-wrap gap-1.5">
                         {result.match_analysis.missing_keywords.map((kw: string, idx: number) => (
                           <span key={idx} className="px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 text-xs">{kw}</span>
@@ -271,7 +261,7 @@ export default function ToolsOptimize() {
                     </div>
                   )}
                   {result.match_analysis.direction && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600 leading-relaxed">{result.match_analysis.direction}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{result.match_analysis.direction}</p>
                   )}
                 </div>
               </div>
@@ -279,8 +269,8 @@ export default function ToolsOptimize() {
 
             {/* 优化前后对比 */}
             {(beforeMatch || afterMatch) && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-teal-50 to-teal-100/50 px-6 py-4 border-b border-teal-200/50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">📊 优化前后对比</h3>
                 </div>
                 <div className="p-6">
@@ -295,14 +285,14 @@ export default function ToolsOptimize() {
                     </div>
                     {/* 箭头 */}
                     <div className="flex items-center justify-center">
-                      <svg className="w-8 h-8 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                      <svg className="w-8 h-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                     </div>
                     {/* 优化后 */}
                     <div className="text-center">
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">优化后</div>
-                      <div className="text-3xl font-black text-teal-600 dark:text-teal-400">{afterMatch?.overall_score ?? '-'}</div>
+                      <div className="text-3xl font-black text-brand-600 dark:text-brand-400">{afterMatch?.overall_score ?? '-'}</div>
                       {afterMatch?.semantic_score !== undefined && (
-                        <div className="text-xs text-teal-600 dark:text-teal-400">语义 {afterMatch.semantic_score}</div>
+                        <div className="text-xs text-brand-600 dark:text-brand-400">语义 {afterMatch.semantic_score}</div>
                       )}
                     </div>
                   </div>
@@ -311,7 +301,7 @@ export default function ToolsOptimize() {
             )}
 
             {/* 优化后简历 */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 px-6 py-4 border-b border-amber-200/50 flex justify-between items-center">
                   <h3 className="font-bold text-gray-900 dark:text-white">✨ 优化后的简历</h3>
                   <div className="flex items-center gap-2">
@@ -328,20 +318,20 @@ export default function ToolsOptimize() {
                           showToast('PDF导出失败：' + error.message, 'error')
                         }
                       }}
-                      className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-3 py-1 rounded-lg hover:bg-white dark:bg-gray-900/70 transition-colors font-medium"
+                      className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 px-3 py-1 rounded-lg hover:bg-white dark:bg-gray-800/70 transition-colors font-medium"
                     >
                       📄 导出PDF
                     </button>
                     <button
                       onClick={() => handleCopy(result.optimized_resume || '')}
-                      className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-3 py-1 rounded-lg hover:bg-white dark:bg-gray-900/70 transition-colors font-medium"
+                      className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 px-3 py-1 rounded-lg hover:bg-white dark:bg-gray-800/70 transition-colors font-medium"
                     >
                       复制全文
                     </button>
                   </div>
                 </div>
               <div className="p-6">
-                <div className="text-gray-700 dark:text-gray-300 dark:text-gray-600 whitespace-pre-wrap bg-gray-50 dark:bg-gray-950 rounded-xl p-4 text-sm leading-relaxed max-h-96 overflow-y-auto">
+                <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap bg-gray-50 dark:bg-gray-900 rounded-xl p-4 text-sm leading-relaxed max-h-96 overflow-y-auto">
                   {result.optimized_resume}
                 </div>
               </div>
@@ -349,24 +339,24 @@ export default function ToolsOptimize() {
 
             {/* 改动对比 */}
             {result.changes_summary && result.changes_summary.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 px-6 py-4 border-b border-indigo-200/50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">🔄 关键改动对比</h3>
                 </div>
                 <div className="p-6 space-y-4">
                   {result.changes_summary.map((change, idx: number) => (
-                    <div key={idx} className="border border-gray-100 dark:border-gray-800 rounded-xl p-4 space-y-3 bg-gray-50 dark:bg-gray-950/50">
+                    <div key={idx} className="border border-gray-100 dark:border-gray-800 rounded-xl p-4 space-y-3 bg-gray-50 dark:bg-gray-900/50">
                       <div>
                         <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">原文</span>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-500 mt-2">{change.original}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-500 mt-2">{change.original}</p>
                       </div>
                       <div>
                         <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">优化后</span>
                         <p className="text-sm text-gray-900 dark:text-white mt-2 font-medium">{change.optimized}</p>
                       </div>
                       <div>
-                        <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded">原因</span>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-2">{change.reason}</p>
+                        <span className="text-xs font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 px-2 py-1 rounded">原因</span>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">{change.reason}</p>
                       </div>
                     </div>
                   ))}
@@ -376,15 +366,15 @@ export default function ToolsOptimize() {
 
             {/* 建议 */}
             {result.tips && result.tips.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 px-6 py-4 border-b border-emerald-200/50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">💡 额外建议</h3>
                 </div>
                 <div className="p-6">
                   <ul className="space-y-2">
                     {result.tips.map((tip: string, idx: number) => (
-                      <li key={idx} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600">
-                        <span className="text-indigo-500 mt-0.5 shrink-0">•</span>
+                      <li key={idx} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
+                        <span className="text-brand-500 mt-0.5 shrink-0">•</span>
                         <span>{tip}</span>
                       </li>
                     ))}
@@ -395,7 +385,7 @@ export default function ToolsOptimize() {
           </div>
         ) : (
           /* 无结果：输入表单 */
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             {/* Tab 切换 */}
             <div className="flex border-b border-gray-100 dark:border-gray-800">
               <button
@@ -439,12 +429,12 @@ export default function ToolsOptimize() {
                   />
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center w-full h-36 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 hover:border-amber-400 hover:bg-amber-50/30 cursor-pointer transition-colors"
+                    className="flex flex-col items-center justify-center w-full h-36 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-amber-400 hover:bg-amber-50/30 cursor-pointer transition-colors"
                   >
                     <svg className="w-10 h-10 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-gray-500">
                       {file ? (
                         <span className="text-amber-600 dark:text-amber-400 font-medium">{file.name}</span>
                       ) : (
@@ -471,7 +461,7 @@ export default function ToolsOptimize() {
               {activeTab === 'text' && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-600">简历内容 <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">简历内容 <span className="text-red-500">*</span></label>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -495,19 +485,19 @@ export default function ToolsOptimize() {
 
               {/* 目标岗位 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-600 mb-1.5">目标岗位（可选）</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">目标岗位（可选）</label>
                 <input
                   value={targetRole}
                   onChange={e => setTargetRole(e.target.value)}
                   type="text"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
                   placeholder="例如：前端工程师、产品经理"
                 />
               </div>
 
               {/* 优化模式 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-600 mb-2">优化模式</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">优化模式</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: 'full', label: '全面优化', desc: '全面重写，STAR法则' },
@@ -520,11 +510,11 @@ export default function ToolsOptimize() {
                       className={`cursor-pointer rounded-xl border-2 p-3 text-center transition-all duration-200 ${
                         mode === opt.value
                           ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-200 dark:ring-amber-700'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
                       }`}
                     >
                       <div className={`text-sm font-bold ${mode === opt.value ? 'text-amber-700' : 'text-gray-900'}`}>{opt.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-0.5">{opt.desc}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{opt.desc}</div>
                     </div>
                   ))}
                 </div>
@@ -532,7 +522,7 @@ export default function ToolsOptimize() {
 
               {/* 场景风格 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-600 mb-2">简历场景</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">简历场景</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { value: 'general', label: '通用' },
@@ -546,7 +536,7 @@ export default function ToolsOptimize() {
                       className={`cursor-pointer rounded-lg border-2 px-3 py-2 text-center text-sm font-medium transition-all duration-200 ${
                         scene === opt.value
                           ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 ring-2 ring-amber-200'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 dark:text-gray-600 hover:border-gray-300'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-300'
                       }`}
                     >
                       {opt.label}
@@ -563,7 +553,7 @@ export default function ToolsOptimize() {
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    <ButtonSpinner />
                     {loadingStep === 'before' && '优化前匹配度计算中...'}
                     {loadingStep === 'optimize' && 'AI 优化中...'}
                     {loadingStep === 'after' && '优化后匹配度计算中...'}

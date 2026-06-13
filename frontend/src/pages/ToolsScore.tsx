@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
+import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext'
 import { resumeAPI } from '../services/api'
+import { ButtonSpinner } from '../components/Loading'
+import ErrorAlert from '../components/ErrorAlert'
+import EmptyState from '../components/EmptyState'
 
 
 interface Resume {
@@ -43,8 +46,6 @@ export default function ToolsScore() {
   const [error, setError] = useState('');
 
   const token = localStorage.getItem('token');
-  const { dark, toggleTheme } = useTheme();
-
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
     resumeAPI.list(token!).then(r => setResumes(r as unknown as Resume[]))
@@ -66,16 +67,16 @@ export default function ToolsScore() {
     }
   };
 
-  const getScoreColor = (s: number) => s >= 80 ? 'text-emerald-600' : s >= 60 ? 'text-amber-600' : 'text-red-600';
-  const getScoreBg = (s: number) => s >= 80 ? 'from-emerald-500 to-teal-500' : s >= 60 ? 'from-amber-500 to-orange-500' : 'from-red-500 to-pink-500';
+  const getScoreColor = (s: number) => s >= 80 ? 'text-brand-600' : s >= 60 ? 'text-amber-600' : 'text-red-600';
+  const getScoreBg = (s: number) => s >= 80 ? 'from-brand-500 to-brand-500' : s >= 60 ? 'from-amber-500 to-orange-500' : 'from-red-500 to-pink-500';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
-      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/')} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title="返回">
+            <button onClick={() => navigate('/practice')} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title="返回">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
@@ -85,17 +86,8 @@ export default function ToolsScore() {
             </div>
             <span className="font-bold text-gray-900 dark:text-white">AI 简历评分</span>
           </div>
-          <button onClick={toggleTheme} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title={dark ? '浅色模式' : '深色模式'}>
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
+<ThemeToggle />
+
         </div>
       </nav>
 
@@ -115,13 +107,10 @@ export default function ToolsScore() {
             </div>
 
             {/* 简历选择 */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">选择要评分的简历</label>
               {resumes.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">你还没有上传简历</p>
-                  <button onClick={() => navigate('/resumes/upload')} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors">去上传简历</button>
-                </div>
+                <EmptyState title="还没有上传简历" description="请先上传简历进行评分" />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {resumes.map(r => (
@@ -139,7 +128,7 @@ export default function ToolsScore() {
             </div>
 
             {/* 错误提示 */}
-            {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+            {error && <ErrorAlert message={error} />}
 
             {/* 开始评分按钮 */}
             <div className="text-center">
@@ -150,7 +139,7 @@ export default function ToolsScore() {
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    <ButtonSpinner />
                     AI 评分中...
                   </>
                 ) : (
@@ -177,7 +166,7 @@ export default function ToolsScore() {
             </div>
 
             {/* 四维评分 */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">维度评分</h3>
               <div className="space-y-5">
                 {[
@@ -204,18 +193,18 @@ export default function ToolsScore() {
 
             {/* 优势 & 不足 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 mb-4">优势亮点</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-brand-600 dark:text-brand-400 mb-4">优势亮点</h3>
                 <ul className="space-y-2">
                   {result.strengths.map((s, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       {s}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">待改进点</h3>
                 <ul className="space-y-2">
                   {result.weaknesses.map((w, i) => (
@@ -229,18 +218,18 @@ export default function ToolsScore() {
             </div>
 
             {/* 改进建议 */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">改进建议</h3>
               <div className="space-y-3">
                 {result.suggestions.map((s, i) => (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
-                    <span className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                    <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                     <span className="text-sm text-gray-700 dark:text-gray-300">{s}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800">
-                <p className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">下一步：{result.next_steps}</p>
+              <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-brand-50 to-brand-50 dark:from-brand-900/20 dark:to-brand-900/20 border border-brand-100 dark:border-brand-800">
+                <p className="text-sm text-brand-700 dark:text-brand-300 font-medium">下一步：{result.next_steps}</p>
               </div>
             </div>
 

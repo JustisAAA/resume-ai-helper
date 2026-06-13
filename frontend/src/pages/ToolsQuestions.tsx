@@ -1,10 +1,13 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
+import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/Toast'
 import { exportTextToPdf } from '../utils/exportPdf'
 
-import { useTheme } from '../context/ThemeContext'
 import { toolsAPI } from '../services/api'
+import { ButtonSpinner } from '../components/Loading'
+import ErrorAlert from '../components/ErrorAlert'
+import EmptyState from '../components/EmptyState'
 
 interface Question {
   id: number;
@@ -51,8 +54,6 @@ const EXAMPLE_JD = `岗位名称：高级前端开发工程师
 4. 掌握 Webpack/Vite 等构建工具`
 
 export default function ToolsQuestions() {
-  const { dark, toggleTheme } = useTheme()
-
   const [resumeActiveTab, setResumeActiveTab] = useState<'upload' | 'text'>('text')
   const [jdActiveTab, setJdActiveTab] = useState<'upload' | 'text'>('text')
   const [resumeText, setResumeText] = useState('')
@@ -139,12 +140,12 @@ export default function ToolsQuestions() {
   const handleReset = () => { setResult(null); setResumeText(''); setJdText(''); setError('') }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
       <nav className="bg-white dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-4 flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/')} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors">
+            <button onClick={() => navigate('/practice')} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center shadow-sm">
@@ -152,17 +153,8 @@ export default function ToolsQuestions() {
             </div>
             <span className="font-bold text-gray-900 dark:text-white">面试题生成</span>
           </div>
-          <button onClick={toggleTheme} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title={dark ? '浅色模式' : '深色模式'}>
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
+<ThemeToggle />
+
         </div>
       </nav>
 
@@ -173,7 +165,7 @@ export default function ToolsQuestions() {
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">面试题生成</h1>
-          <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">AI 根据简历和 JD 生成针对性面试问题</p>
+          <p className="text-gray-500 dark:text-gray-500 mt-1">AI 根据简历和 JD 生成针对性面试问题</p>
         </div>
 
         {/* 有结果：显示结果 */}
@@ -195,11 +187,11 @@ export default function ToolsQuestions() {
                         showToast('PDF导出失败：' + error.message, 'error')
                     }
                   }}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:bg-indigo-900/20 transition-colors font-medium"
+                  className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 px-3 py-1.5 rounded-lg hover:bg-brand-50 dark:bg-brand-900/20 transition-colors font-medium"
                 >
                   📄 导出PDF
                 </button>
-                <button onClick={handleReset} className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:bg-indigo-900/20 transition-colors font-medium">
+                <button onClick={handleReset} className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 px-3 py-1.5 rounded-lg hover:bg-brand-50 dark:bg-brand-900/20 transition-colors font-medium">
                   ← 重新生成
                 </button>
               </div>
@@ -207,18 +199,18 @@ export default function ToolsQuestions() {
 
             {/* 整体评估 */}
             {result.overall_assessment && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="bg-gradient-to-r from-cyan-50 to-cyan-100/50 px-6 py-4 border-b border-cyan-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">整体评估</h3>
                 </div>
-                <div className="p-6"><p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600 leading-relaxed">{result.overall_assessment}</p></div>
+                <div className="p-6"><p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{result.overall_assessment}</p></div>
               </div>
             )}
 
             {/* 问题列表 */}
             <div className="space-y-4">
               {(result.questions || []).map((q: Question, idx: number) => (
-                <div key={idx} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:border-cyan-200 hover:shadow-md transition-all duration-200">
+                <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:border-cyan-200 hover:shadow-md transition-all duration-200">
                   <div className="bg-gradient-to-r from-cyan-50/50 to-cyan-100/30 px-6 py-3 border-b border-cyan-100/50 flex items-center justify-between">
                     <span className="text-sm font-bold text-cyan-700">Q{idx + 1}</span>
                     <div className="flex gap-2">
@@ -228,7 +220,7 @@ export default function ToolsQuestions() {
                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                           q.semantic_difficulty_score >= 70 ? 'bg-orange-200 text-orange-800' :
                           q.semantic_difficulty_score >= 40 ? 'bg-amber-200 text-amber-800' :
-                          'bg-emerald-200 text-emerald-800'
+                          'bg-brand-200 text-brand-800'
                         }`}>
                           语义{q.semantic_difficulty_score}
                         </span>
@@ -251,14 +243,12 @@ export default function ToolsQuestions() {
             </div>
 
             {(result.questions || []).length === 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 text-center text-gray-400 dark:text-gray-500 text-sm">
-                暂无生成的问题，请调整输入后重试
-              </div>
+              <EmptyState size="sm" title="暂无生成的问题" description="请调整输入后重试" />
             )}
           </div>
         ) : (
           /* 无结果：输入表单 */
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             {/* 简历输入区 */}
             <div className="border-b border-gray-100 dark:border-gray-800">
               <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
@@ -266,8 +256,8 @@ export default function ToolsQuestions() {
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleFillExample('resume')} className="text-xs text-cyan-600 hover:text-cyan-800 px-2 py-1 rounded-md hover:bg-cyan-50 transition-colors font-medium">✨ 填入示例</button>
                   <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                    <button onClick={() => { setResumeActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${resumeActiveTab === 'text' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
-                    <button onClick={() => { setResumeActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${resumeActiveTab === 'upload' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
+                    <button onClick={() => { setResumeActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${resumeActiveTab === 'text' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
+                    <button onClick={() => { setResumeActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${resumeActiveTab === 'upload' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
                   </div>
                 </div>
               </div>
@@ -275,14 +265,14 @@ export default function ToolsQuestions() {
                 {resumeActiveTab === 'upload' ? (
                   <div>
                     <input ref={el => { resumeFileRef.current = el }} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleResumeFileChange} className="hidden" />
-                    <div onClick={() => resumeFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
+                    <div onClick={() => resumeFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">点击选择文件</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
                     </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">上传文件后将自动解析内容</p>
                   </div>
                 ) : (
-                  <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} rows={8} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none resize-none text-sm" placeholder="粘贴你的简历内容..." />
+                  <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} rows={8} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-cyan-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none text-sm" placeholder="粘贴你的简历内容..." />
                 )}
               </div>
             </div>
@@ -294,8 +284,8 @@ export default function ToolsQuestions() {
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleFillExample('jd')} className="text-xs text-cyan-600 hover:text-cyan-800 px-2 py-1 rounded-md hover:bg-cyan-50 transition-colors font-medium">✨ 填入示例</button>
                   <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                    <button onClick={() => { setJdActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${jdActiveTab === 'text' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
-                    <button onClick={() => { setJdActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${jdActiveTab === 'upload' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
+                    <button onClick={() => { setJdActiveTab('text'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors ${jdActiveTab === 'text' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>粘贴</button>
+                    <button onClick={() => { setJdActiveTab('upload'); setError('') }} className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${jdActiveTab === 'upload' ? 'bg-cyan-50 text-cyan-600' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50'}`}>上传</button>
                   </div>
                 </div>
               </div>
@@ -303,14 +293,14 @@ export default function ToolsQuestions() {
                 {jdActiveTab === 'upload' ? (
                   <div>
                     <input ref={el => { jdFileRef.current = el }} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleJdFileChange} className="hidden" />
-                    <div onClick={() => jdFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
+                    <div onClick={() => jdFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">点击选择文件</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
                     </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">上传文件后将自动解析内容</p>
                   </div>
                 ) : (
-                  <textarea value={jdText} onChange={e => setJdText(e.target.value)} rows={6} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none resize-none text-sm" placeholder="粘贴职位描述（JD）内容，可选..." />
+                  <textarea value={jdText} onChange={e => setJdText(e.target.value)} rows={6} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-cyan-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none text-sm" placeholder="粘贴职位描述（JD）内容，可选..." />
                 )}
               </div>
             </div>
@@ -326,9 +316,9 @@ export default function ToolsQuestions() {
 
             {/* 提交 */}
             <div className="p-6 space-y-3">
-              {error && <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 text-red-700 text-sm">{error}</div>}
+              {error && <ErrorAlert message={error} />}
               <button onClick={handleSubmit} disabled={loading || (resumeActiveTab === 'text' ? !resumeText.trim() : false)} className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                {loading ? (<> <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> AI 生成中... </>) : (<> <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg> 生成面试题 </>)}
+                {loading ? (<> <ButtonSpinner /> AI 生成中... </>) : (<> <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg> 生成面试题 </>)}
               </button>
             </div>
           </div>

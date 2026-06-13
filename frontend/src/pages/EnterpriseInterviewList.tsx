@@ -1,13 +1,20 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { enterpriseAPI } from '../services/api';
-import { ChartBarIcon, ArrowLeftIcon, ArrowPathIcon, ExclamationCircleIcon, InboxIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, ArrowLeftIcon, InboxIcon } from '@heroicons/react/24/outline';
+import Loading from '../components/Loading';
+import Pagination from '../components/Pagination';
+import EmptyState from '../components/EmptyState';
+import ErrorAlert from '../components/ErrorAlert';
+import StatusBadge from '../components/StatusBadge';
 
 interface Interview {
   id: string;
   title: string;
+  position?: string;
   status: string;
   createdAt: string;
+  feedback?: any;
   user: {
     id: string;
     name: string;
@@ -29,16 +36,21 @@ const EnterpriseInterviewList: React.FC = () => {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     loadInterviews();
-  }, []);
+  }, [page]);
 
   const loadInterviews = async () => {
     try {
       setLoading(true);
-      const data = await enterpriseAPI.getInterviews();
+      const data = await enterpriseAPI.getInterviews(page);
       setInterviews(data.interviews || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotal(data.pagination?.total || 0);
     } catch (err: any) {
       setError(err.response?.data?.error || '加载面试列表失败');
     } finally {
@@ -46,31 +58,13 @@ const EnterpriseInterviewList: React.FC = () => {
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'CREATED': return '未开始';
-      case 'IN_PROGRESS': return '进行中';
-      case 'COMPLETED': return '已完成';
-      default: return status;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CREATED': return 'bg-yellow-100 text-yellow-800';
-      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loading) return <div className="p-8 text-center text-gray-500"><ArrowPathIcon className="mx-auto h-8 w-8 animate-spin text-indigo-500 mb-2" />加载中...</div>;
-  if (error) return <div className="p-8 text-center text-red-500"><ExclamationCircleIcon className="mx-auto h-8 w-8 mb-2" />{error}</div>;
+  if (loading) return <Loading size="sm" />;
+  if (error) return <ErrorAlert message={error} />;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -89,14 +83,11 @@ const EnterpriseInterviewList: React.FC = () => {
       {/* 主要内容 */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {interviews.length === 0 && (
-          <div className="text-center text-gray-500 mt-8">
-            <InboxIcon className="mx-auto h-10 w-10 mb-2 text-gray-400" />
-            暂无面试
-          </div>
+          <EmptyState icon={<InboxIcon className="w-full h-full" />} title="暂无面试" />
         )}
 
         {interviews.length > 0 && (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -117,25 +108,33 @@ const EnterpriseInterviewList: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{interview.title}</div>
+                      <div className="text-sm text-gray-900">{interview.position}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(interview.status)}`}>
-                        {getStatusText(interview.status)}
-                      </span>
+                      <StatusBadge status={interview.status} type="interview" />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(interview.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {interview.status === 'COMPLETED' && interview.report ? (
+                      {interview.status === 'COMPLETED' ? (
+                        (interview.report || interview.feedback?.enterpriseEvaluation) ? (
                         <button
                           onClick={() => navigate(`/enterprise/interviews/${interview.id}/report`)}
-                          className="inline-flex items-center text-indigo-600 hover:text-indigo-900"
+                          className="inline-flex items-center text-brand-600 hover:text-brand-900"
                         >
                           <ChartBarIcon className="w-4 h-4 mr-1" />
                           查看报告
                         </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/enterprise/interviews/${interview.id}/report`)}
+                          className="inline-flex items-center text-brand-600 hover:text-brand-900"
+                        >
+                          <ChartBarIcon className="w-4 h-4 mr-1" />
+                          AI评估
+                        </button>
+                      )
                       ) : (
                         <span className="text-gray-400">等待中</span>
                       )}
@@ -146,6 +145,8 @@ const EnterpriseInterviewList: React.FC = () => {
             </table>
           </div>
         )}
+
+        <Pagination currentPage={page} totalPages={totalPages} total={total} onPageChange={setPage} />
       </main>
     </div>
   );

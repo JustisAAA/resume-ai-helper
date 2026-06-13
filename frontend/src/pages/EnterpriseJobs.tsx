@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { jobAPI } from '../services/api'
-import { PencilIcon, TrashIcon, BriefcaseIcon } from '@heroicons/react/24/outline'
+import { jobAPI, enterpriseAPI } from '../services/api'
+import { useToast } from '../components/Toast'
+import Loading from '../components/Loading'
+import EmptyState from '../components/EmptyState'
+import ErrorAlert from '../components/ErrorAlert'
+import StatusBadge from '../components/StatusBadge'
+import { PencilIcon, TrashIcon, ChatBubbleLeftEllipsisIcon } from '@heroicons/react/24/outline'
 
 export default function EnterpriseJobs() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -22,7 +28,9 @@ export default function EnterpriseJobs() {
         return
       }
 
-      const res = await jobAPI.list()
+      // 先获取企业信息，再查询该企业职位
+      const enterpriseRes = await enterpriseAPI.getProfile(token)
+      const res = await jobAPI.list({ enterpriseId: enterpriseRes.enterprise.id })
       setJobs(res.jobs || [])
     } catch (err: unknown) {
       const errObj = err as { response?: { data?: { error?: string } } };
@@ -41,12 +49,12 @@ export default function EnterpriseJobs() {
       if (!token) return
       
       await jobAPI.delete(token, id)
-      alert('删除成功')
+      showToast('删除成功', 'success')
       loadJobs()
     } catch (err: unknown) {
       const errObj = err as { response?: { data?: { error?: string } } };
       const msg = errObj.response?.data?.error || '删除失败';
-      alert(msg)
+      showToast(msg, 'error')
     }
   }
 
@@ -56,37 +64,19 @@ export default function EnterpriseJobs() {
       if (!token) return
       
       await jobAPI.updateStatus(token, id, newStatus as any)
-      alert('状态更新成功')
+      showToast('状态更新成功', 'success')
       loadJobs()
     } catch (err: unknown) {
       const errObj = err as { response?: { data?: { error?: string } } };
       const msg = errObj.response?.data?.error || '更新失败';
-      alert(msg)
+      showToast(msg, 'error')
     }
-  }
-
-  const getStatusBadge = (status: string) => {
-    const colors: any = {
-      'ACTIVE': 'bg-green-100 text-green-800',
-      'CLOSED': 'bg-red-100 text-red-800',
-      'DRAFT': 'bg-gray-100 text-gray-800'
-    }
-    const labels: any = {
-      'ACTIVE': '活跃',
-      'CLOSED': '已关闭',
-      'DRAFT': '草稿'
-    }
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
-        {labels[status] || status}
-      </span>
-    )
   }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">加载中...</div>
+        <Loading size="sm" />
       </div>
     )
   }
@@ -94,7 +84,7 @@ export default function EnterpriseJobs() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -113,7 +103,7 @@ export default function EnterpriseJobs() {
             <div className="flex items-center">
               <button
                 onClick={() => navigate('/enterprise/jobs/new')}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors"
               >
                 发布新职位
               </button>
@@ -124,28 +114,12 @@ export default function EnterpriseJobs() {
 
       {/* 主要内容 */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {error && (
-          <div className="mb-4 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 text-red-700">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {jobs.length === 0 ? (
-          <div className="text-center py-12">
-            <BriefcaseIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">暂无职位</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">开始发布你的第一个职位吧</p>
-            <div className="mt-6">
-              <button
-                onClick={() => navigate('/enterprise/jobs/new')}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-              >
-                发布新职位
-              </button>
-            </div>
-          </div>
+          <EmptyState title="暂无职位" description="还没有发布任何职位" action={{ label: '发布职位', onClick: () => navigate('/enterprise/jobs/new') }} />
         ) : (
-          <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+          <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <ul className="divide-y divide-gray-200 dark:divide-gray-700">
               {jobs.map((job) => (
                 <li key={job.id}>
@@ -153,10 +127,10 @@ export default function EnterpriseJobs() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3">
-                          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 truncate">
-                            {job.title}
+                          <p className="text-sm font-medium text-brand-600 dark:text-brand-400 truncate">
+                            {job?.title || '未知职位'}
                           </p>
-                          {getStatusBadge(job.status)}
+                          <StatusBadge status={job.status} type="job" />
                         </div>
                         <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-4">
                           {job.location && (
@@ -182,7 +156,7 @@ export default function EnterpriseJobs() {
                         <select
                           value={job.status}
                           onChange={(e) => handleStatusChange(job.id, e.target.value)}
-                          className="text-sm border-gray-300 rounded-md"
+                          className="text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
                         >
                           <option value="ACTIVE">活跃</option>
                           <option value="CLOSED">关闭</option>
@@ -190,7 +164,7 @@ export default function EnterpriseJobs() {
                         </select>
                         <button
                           onClick={() => navigate(`/enterprise/jobs/${job.id}/edit`)}
-                          className="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          className="inline-flex items-center text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
                         >
                           <PencilIcon className="w-4 h-4 mr-1" />
                           编辑
@@ -202,6 +176,16 @@ export default function EnterpriseJobs() {
                           <TrashIcon className="w-4 h-4 mr-1" />
                           删除
                         </button>
+                        {job.hrAccount?.userId && (
+                          <button
+                            onClick={() => navigate(`/enterprise/messages/${job.hrAccount.userId}?name=${encodeURIComponent(job.hrAccount.name||'')}`)}
+                            className="inline-flex items-center text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
+                            title="联系HR"
+                          >
+                            <ChatBubbleLeftEllipsisIcon className="w-4 h-4 mr-1" />
+                            联系HR
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+﻿import { useEffect, useState, useRef, useCallback } from 'react'
+import ThemeToggle from '../components/ThemeToggle'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,6 +7,8 @@ import { useTheme } from '../context/ThemeContext'
 import { interviewAPI, Interview } from '../services/api'
 import { getApiBaseUrl } from '../utils/api'
 import { answerSchema, type AnswerFormData } from '../schemas/answerSchema'
+import Loading, { ButtonSpinner } from '../components/Loading'
+import ErrorAlert from '../components/ErrorAlert'
 
 export default function InterviewRoom() {
   const { id } = useParams<{ id: string }>()
@@ -30,7 +33,7 @@ export default function InterviewRoom() {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const navigate = useNavigate()
-  const { dark, toggleTheme } = useTheme()
+  const { dark } = useTheme()
   const [userAvatar, setUserAvatar] = useState<string>('')
 
   // 安全提取错误信息（防止后端返回对象导致React崩溃）
@@ -298,9 +301,7 @@ export default function InterviewRoom() {
 
   const onSubmitAnswer = async (data: AnswerFormData) => {
     const userAnswer = data.answer.trim()
-    // 停止当前语音播放，防止AI还在读上一题
     stopSpeaking()
-    // 设置标志位：刚刚提交答案，useEffect 中不要重复播放
     justSubmittedRef.current = true
     setAnswer('')
     setValue('answer', '')
@@ -308,47 +309,57 @@ export default function InterviewRoom() {
     setError('')
     setChatHistory(prev => [...prev, { role: 'candidate', content: userAnswer }])
 
-    try {
-      const token = localStorage.getItem('token')
-      const res = await interviewAPI.answer(token!, id!, { answer: userAnswer })
+    // 添加 "AI 正在思考..." 指示器
+    setChatHistory(prev => [...prev, { role: 'interviewer', content: '...', thinking: true }] as any)
 
-      const { evaluation, nextQuestion } = res
+    const token = localStorage.getItem('token')
+    interviewAPI.answerStream(token!, id!, { answer: userAnswer }, {
+      onDelta: (_text: string) => {
+        // AI 正在流式生成，保持思考指示器
+      },
+      onDone: (result: any) => {
+        setSubmitting(false)
+        const { evaluation, nextQuestion } = result
 
-      setChatHistory(prev => {
-        const newHistory = [...prev]
-        const lastIndex = newHistory.length - 1
-        if (newHistory[lastIndex].role === 'candidate') {
-          newHistory[lastIndex] = {
-            ...newHistory[lastIndex],
-            score: evaluation!.score,
-            comment: evaluation!.comment,
-            highlights: evaluation!.highlights || [],
-            improvements: evaluation!.improvements || []
+        // 移除思考指示器，更新为实际评价
+        setChatHistory(prev => {
+          const newHistory = prev.filter((m: any) => !m.thinking)
+          // 更新最后一条 candidate 消息的评分数据
+          const lastCandIdx = newHistory.length - 1
+          if (lastCandIdx >= 0 && newHistory[lastCandIdx].role === 'candidate') {
+            newHistory[lastCandIdx] = {
+              ...newHistory[lastCandIdx],
+              score: evaluation.score,
+              comment: evaluation.comment,
+              highlights: evaluation.highlights || [],
+              improvements: evaluation.improvements || [],
+            }
           }
-        }
-        return newHistory
-      })
+          return newHistory
+        })
 
-      if (nextQuestion) {
-        setCurrentQuestion(nextQuestion)
-        setChatHistory(prev => [...prev, { role: 'interviewer', content: nextQuestion }])
-        // 语音模式：播放下一题
-        if (voiceMode) {
-          setTimeout(() => speakText(nextQuestion), 500)
+        if (nextQuestion) {
+          setCurrentQuestion(nextQuestion)
+          setChatHistory(prev => [...prev, { role: 'interviewer', content: nextQuestion }])
+          if (voiceMode) {
+            setTimeout(() => speakText(nextQuestion), 500)
+          }
+        } else {
+          setInterviewEnded(true)
+          setCurrentQuestion('')
+          if (timerRef.current) clearInterval(timerRef.current)
+          setTimeout(() => navigate(`/interviews/${id}/report`), 3000)
         }
-      } else {
-        setInterviewEnded(true)
-        setCurrentQuestion('')
-        if (timerRef.current) clearInterval(timerRef.current)
-        setTimeout(() => navigate(`/interviews/${id}/report`), 3000)
-      }
-    } catch (err: unknown) {
-      setError(extractErrorMessage(err) || '提交回答失败')
-      setAnswer(userAnswer)
-      setValue('answer', userAnswer)
-    } finally {
-      setSubmitting(false)
-    }
+      },
+      onError: (errMsg: string) => {
+        setSubmitting(false)
+        setError(errMsg || '提交回答失败')
+        setAnswer(userAnswer)
+        setValue('answer', userAnswer)
+        // 移除思考指示器
+        setChatHistory(prev => prev.filter((m: any) => !m.thinking))
+      },
+    })
   }
 
   const handleExit = useCallback(async () => {
@@ -414,41 +425,21 @@ export default function InterviewRoom() {
     { icon: '🤝', title: '保持互动', desc: '适当提问、确认理解，展现你的沟通能力和情商。' },
   ]
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400">加载面试...</p>
-      </div>
-    </div>
-  )
-  if (error) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-      <div className="text-center max-w-md mx-auto px-4">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-        </div>
-        <p className="text-red-600 dark:text-red-400 font-medium mb-2">出错了</p>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">{error}</p>
-        <button onClick={() => navigate('/interviews')} className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors">
-          返回面试列表
-        </button>
-      </div>
-    </div>
-  )
+  if (loading) return <Loading fullScreen size="md" text="加载面试..." />;
+  if (error) return <ErrorAlert message={error} />;
   if (!interview) return null
 
   const difficultyLabel = interview.difficulty === 'EASY' ? '简单' : interview.difficulty === 'HARD' ? '困难' : '中等'
   const difficultyColor = interview.difficulty === 'EASY' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30' : interview.difficulty === 'HARD' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30' : 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30'
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* 顶部信息栏 */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 px-4 py-3 flex items-center gap-4 sticky top-0 z-40 shadow-lg shadow-indigo-900/20">
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/90 dark:bg-gray-900/90 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-4 shadow-sm">
         {/* 返回按钮 */}
         <button
           onClick={handleExit}
-          className="p-2 text-indigo-300 hover:text-white hover:bg-white dark:bg-gray-900/10 rounded-lg transition-colors shrink-0"
+          className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors shrink-0"
           title="退出面试"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -456,11 +447,11 @@ export default function InterviewRoom() {
 
         {/* 面试信息 */}
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-white truncate">{interview.title}</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{interview.title}</h2>
           <div className="flex items-center gap-2 mt-0.5">
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${difficultyColor}`}>{difficultyLabel}</span>
-            <span className="text-xs text-indigo-300">·</span>
-            <span className="text-xs text-white/70">{interview.position || '通用岗位'}</span>
+            <span className="text-xs text-gray-400">·</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{interview.position || '通用岗位'}</span>
           </div>
         </div>
 
@@ -472,9 +463,9 @@ export default function InterviewRoom() {
             className={`p-2 rounded-lg transition-colors ${
               voiceMode
                 ? isListening || isSpeaking
-                  ? 'text-green-400 bg-green-900/30 animate-pulse'
-                  : 'text-indigo-300 bg-indigo-900/30'
-                : 'text-indigo-300 hover:text-white hover:bg-white/10'
+                  ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30 animate-pulse'
+                  : 'text-brand-600 bg-brand-50 dark:text-brand-400 dark:bg-brand-900/30'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
             title={voiceMode ? '关闭语音模式' : '开启语音模式'}
           >
@@ -496,57 +487,48 @@ export default function InterviewRoom() {
           </button>
 
           {/* 主题切换 */}
-          <button onClick={toggleTheme} className="p-2 text-indigo-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title={dark ? '浅色模式' : '深色模式'}>
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
+<ThemeToggle />
+
 
           <div className="text-right hidden sm:block">
-            <div className="text-xs text-white/70">用时</div>
-            <div className="text-sm font-mono font-semibold text-white">{formatTime(elapsedTime)}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">用时</div>
+            <div className="text-sm font-mono font-semibold text-gray-900 dark:text-white">{formatTime(elapsedTime)}</div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-white/70">进度</div>
-            <div className="text-sm font-semibold text-white">{answeredCount}/{totalQuestions}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">进度</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">{answeredCount}/{totalQuestions}</div>
           </div>
           {/* 进度环 */}
           <div className="relative w-10 h-10 shrink-0">
             <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 40 40">
-              <circle cx="20" cy="20" r="16" fill="none" stroke="#ffffff40" strokeWidth="3" />
-              <circle cx="20" cy="20" r="16" fill="none" stroke="#ffffff" strokeWidth="3"
+              <circle cx="20" cy="20" r="16" fill="none" stroke={dark ? '#374151' : '#e5e7eb'} strokeWidth="3" />
+              <circle cx="20" cy="20" r="16" fill="none" stroke={dark ? '#6366f1' : '#4f46e5'} strokeWidth="3"
                 strokeDasharray={`${progressPercent * 1.005} 100.5`}
                 strokeLinecap="round"
                 className="transition-all duration-500"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700 dark:text-gray-300">
               {progressPercent}%
             </span>
           </div>
         </div>
-      </div>
+      </nav>
 
       {/* 进度条（移动端） */}
-      <div className="sm:hidden bg-white dark:bg-gray-900 px-4 pb-2">
+      <div className="sm:hidden bg-white dark:bg-gray-800 px-4 pb-2">
         <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+          <div className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
         </div>
       </div>
 
       {/* 主体内容区 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 左侧：面试官信息面板（桌面端） */}
-        <div className="hidden lg:flex w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-col shrink-0">
+        <div className="hidden lg:flex w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col shrink-0">
           {/* 面试官形象 */}
           <div className="p-6 text-center border-b border-gray-100 dark:border-gray-800">
-            <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-indigo-900/40 ring-4 ring-indigo-100 dark:ring-indigo-900/50">
+            <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-200 dark:shadow-brand-900/40 ring-4 ring-brand-100 dark:ring-brand-900/50">
               <svg className="w-10 h-10 text-white" viewBox="0 0 48 48" fill="none">
                 <circle cx="24" cy="16" r="9" fill="white" fillOpacity="0.95" />
                 <path d="M6 44c0-9 8-16 18-16s18 7 18 16" fill="white" fillOpacity="0.95" />
@@ -604,8 +586,8 @@ export default function InterviewRoom() {
             {/* 面试开始提示 */}
             {answeredCount === 0 && !interviewEnded && (
               <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-brand-100 to-brand-100 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">面试开始</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
@@ -620,23 +602,33 @@ export default function InterviewRoom() {
                 {msg.role === 'interviewer' ? (
                   <div className="flex gap-3 max-w-2xl">
                     {/* AI头像 */}
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
                       AI
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">面试官</div>
-                      <div className="bg-white dark:bg-gray-900 rounded-2xl rounded-tl-md px-4 py-3 text-gray-800 dark:text-gray-200 leading-relaxed shadow-sm border border-gray-100 dark:border-gray-800 relative">
-                        {/* 装饰性引号 */}
-                        <span className="absolute -left-1 -top-1 text-2xl text-indigo-100 font-serif select-none">"</span>
-                        {msg.content}
-                      </div>
+                      {(msg as any).thinking ? (
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm border border-gray-100 dark:border-gray-800">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <span className="text-sm text-gray-400 ml-1">AI 思考中...</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3 text-gray-800 dark:text-gray-200 leading-relaxed shadow-sm border border-gray-100 dark:border-gray-800 relative">
+                          <span className="absolute -left-1 -top-1 text-2xl text-brand-100 font-serif select-none">"</span>
+                          {msg.content}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="flex gap-3 max-w-2xl ml-auto">
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium text-right">你</div>
-                      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-2xl rounded-tr-md px-4 py-3 leading-relaxed shadow-sm">
+                      <div className="bg-gradient-to-br from-brand-600 to-brand-700 text-white rounded-2xl rounded-tr-md px-4 py-3 leading-relaxed shadow-sm">
                         {msg.content}
                       </div>
                       {msg.score !== undefined && (
@@ -678,7 +670,7 @@ export default function InterviewRoom() {
                       )}
                     </div>
                     {/* 用户头像 */}
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm overflow-hidden">
                       {userAvatar ? (
                         <img src={userAvatar.startsWith('http') ? userAvatar : `${getApiBaseUrl()}${userAvatar}`} alt="" className="w-9 h-9 rounded-full object-cover" />
                       ) : (
@@ -693,15 +685,15 @@ export default function InterviewRoom() {
             {/* AI思考中动画 */}
             {submitting && (
               <div className="flex gap-3 max-w-2xl">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
                   AI
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">面试官</div>
-                  <div className="bg-white dark:bg-gray-900 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm border border-gray-100 dark:border-gray-800 inline-flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.15s]" />
-                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.3s]" />
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm border border-gray-100 dark:border-gray-800 inline-flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:0.15s]" />
+                    <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:0.3s]" />
                     <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">正在思考...</span>
                   </div>
                 </div>
@@ -713,7 +705,7 @@ export default function InterviewRoom() {
         </div>
 
         {/* 右侧：面试技巧面板（桌面端） */}
-        <div className="hidden xl:flex w-72 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex-col shrink-0">
+        <div className="hidden xl:flex w-72 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex-col shrink-0">
           <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">💡 面试技巧</h3>
             <button
@@ -726,11 +718,11 @@ export default function InterviewRoom() {
           {showTips && (
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {interviewTips.map((tip, i) => (
-                <div key={i} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-950 hover:bg-indigo-50 dark:bg-indigo-900/30 transition-colors cursor-default group">
+                <div key={i} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900 hover:bg-brand-50 dark:bg-brand-900/30 transition-colors cursor-default group">
                   <div className="flex items-start gap-2">
                     <span className="text-lg shrink-0">{tip.icon}</span>
                     <div>
-                      <div className="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-indigo-700 transition-colors">{tip.title}</div>
+                      <div className="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-brand-700 transition-colors">{tip.title}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">{tip.desc}</div>
                     </div>
                   </div>
@@ -741,16 +733,16 @@ export default function InterviewRoom() {
               <div className="border-t border-gray-100 dark:border-gray-800 my-2" />
 
               {/* 当前状态提示 */}
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
-                <div className="text-sm font-semibold text-indigo-800 dark:text-indigo-200 mb-2">📊 当前状态</div>
-                <div className="space-y-2 text-xs text-indigo-700 dark:text-indigo-300">
+              <div className="p-3 rounded-xl bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-800">
+                <div className="text-sm font-semibold text-brand-800 dark:text-brand-200 mb-2">📊 当前状态</div>
+                <div className="space-y-2 text-xs text-brand-700 dark:text-brand-300">
                   <div className="flex justify-between">
                     <span>已回答</span>
-                    <span className="font-semibold text-indigo-900 dark:text-indigo-100">{answeredCount}题</span>
+                    <span className="font-semibold text-brand-900 dark:text-brand-100">{answeredCount}题</span>
                   </div>
                   <div className="flex justify-between">
                     <span>平均得分</span>
-                    <span className="font-semibold text-indigo-900 dark:text-indigo-100">
+                    <span className="font-semibold text-brand-900 dark:text-brand-100">
                       {answeredCount > 0
                         ? (chatHistory.filter(m => m.role === 'candidate' && m.score !== undefined).reduce((s, m) => s + (Number(m.score) || 0), 0) / answeredCount).toFixed(1)
                         : '--'
@@ -759,7 +751,7 @@ export default function InterviewRoom() {
                   </div>
                   <div className="flex justify-between">
                     <span>得分率</span>
-                    <span className="font-semibold text-indigo-900 dark:text-indigo-100">
+                    <span className="font-semibold text-brand-900 dark:text-brand-100">
                       {answeredCount > 0
                         ? Math.round((chatHistory.filter(m => m.role === 'candidate' && m.score !== undefined).reduce((s, m) => s + (Number(m.score) || 0), 0) / answeredCount) * 10) + '%'
                         : '--'
@@ -775,16 +767,16 @@ export default function InterviewRoom() {
 
       {/* 实时提示栏 */}
       {!interviewEnded && currentQuestion && (
-        <div className="bg-indigo-50 dark:bg-indigo-900/30 border-t border-indigo-100 dark:border-indigo-800 px-4 py-3">
+        <div className="bg-brand-50 dark:bg-brand-900/30 border-t border-brand-100 dark:border-brand-800 px-4 py-3">
           <div className="max-w-3xl mx-auto">
-            <p className="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">{currentTip}</p>
+            <p className="text-sm text-brand-700 dark:text-brand-300 leading-relaxed">{currentTip}</p>
           </div>
         </div>
       )}
 
       {/* 输入区域 */}
       {!interviewEnded && currentQuestion && (
-        <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-4">
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-4">
           <form onSubmit={handleSubmit(onSubmitAnswer)} className="max-w-3xl mx-auto">
             <div className="flex gap-3 items-end">
               <div className="flex-1 relative">
@@ -798,7 +790,7 @@ export default function InterviewRoom() {
                       handleSubmit(onSubmitAnswer)()
                     }
                   }}
-                  className={`w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm leading-relaxed transition shadow-sm ${voiceMode ? 'pl-10 pr-4' : 'px-4'}`}
+                  className={`w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none text-sm leading-relaxed transition shadow-sm ${voiceMode ? 'pl-10 pr-4' : 'px-4'}`}
                   rows={3}
                 />
                 {/* 语音识别按钮 */}
@@ -834,11 +826,11 @@ export default function InterviewRoom() {
               <button
                 type="submit"
                 disabled={!answer.trim() || submitting}
-                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl font-medium hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl font-medium hover:from-brand-700 hover:to-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center gap-2"
               >
                 {submitting ? (
                   <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    <ButtonSpinner />
                     提交中
                   </>
                 ) : (
@@ -862,15 +854,15 @@ export default function InterviewRoom() {
 
       {/* 面试结束提示 */}
       {interviewEnded && (
-        <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-6">
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-6">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-100 to-brand-100 flex items-center justify-center">
               <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <h3 className="text-lg font-semibold text-green-700 mb-1">面试已结束！</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">正在生成你的面试报告，请稍候...</p>
             <div className="mt-4 w-48 mx-auto h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse" />
+              <div className="h-full bg-gradient-to-r from-green-400 to-brand-500 rounded-full animate-pulse" />
             </div>
           </div>
         </div>

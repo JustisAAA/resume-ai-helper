@@ -1,13 +1,15 @@
-import { useEffect, useState, useRef, useMemo } from 'react'
+﻿import { useEffect, useState, useRef, useMemo } from 'react'
+import ThemeToggle from '../components/ThemeToggle'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } from 'recharts'
 import { useToast } from '../components/Toast'
 import type { ReportData, InterviewData, QuestionReview as QuestionReviewType, AnswerData } from '../types/report'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { exportReportToPDF } from '../utils/exportPdf'
 
 import { useTheme } from '../context/ThemeContext'
 import { interviewAPI } from '../services/api'
+import Loading from '../components/Loading'
+import ErrorAlert from '../components/ErrorAlert'
 
 // ═══════════════════════════════════════════════════
 // 子组件：数字滚动
@@ -47,19 +49,19 @@ function ScoreHero({ overallScore, interview, avgScore, passInfo }: {
   passInfo: { text: string; color: string }
 }) {
   return (
-    <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 rounded-3xl p-8 sm:p-10 mb-8 text-white overflow-hidden shadow-xl">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-gray-900/5 rounded-full -mr-32 -mt-32" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-white dark:bg-gray-900/5 rounded-full -ml-24 -mb-24" />
+    <div className="relative bg-gradient-to-br from-brand-600 via-brand-500 to-brand-700 rounded-3xl p-8 sm:p-10 mb-8 text-white overflow-hidden shadow-xl">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-gray-800/5 rounded-full -mr-32 -mt-32" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-white dark:bg-gray-800/5 rounded-full -ml-24 -mb-24" />
       <div className="relative flex flex-col sm:flex-row items-center gap-8 sm:gap-12">
         <div className="text-center sm:text-left">
-          <div className="text-sm font-medium text-indigo-200 mb-2">{interview.title}</div>
+          <div className="text-sm font-medium text-brand-200 mb-2">{interview.title}</div>
           <div className="flex items-baseline gap-2 justify-center sm:justify-start">
             <span className="text-7xl sm:text-8xl font-black tabular-nums">
               <AnimatedScore value={overallScore} />
             </span>
-            <span className="text-2xl sm:text-3xl text-indigo-200 font-light">/ 100</span>
+            <span className="text-2xl sm:text-3xl text-brand-200 font-light">/ 100</span>
           </div>
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold mt-3 ${passInfo.color} bg-white dark:bg-gray-900/90`}>
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold mt-3 ${passInfo.color} bg-white dark:bg-gray-800/90`}>
             {overallScore >= 60 ? '✅' : '⚠️'} {passInfo.text}
           </div>
         </div>
@@ -70,7 +72,7 @@ function ScoreHero({ overallScore, interview, avgScore, passInfo }: {
             { icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.11 3.666-.466.339-.738.601-.896.864L8.61 11.9c.496-1.02.738-1.923.738-2.7 0-.723-.13-1.223-.406-1.56-.268-.321-.443-.44-.736-.71-.147-.105-.303-.214-.455-.352z', label: `${interview.answers?.length || 0} 道题 · 平均得分 ${avgScore.toFixed(1)}/10` },
             { icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', label: interview.duration ? `${Math.floor(interview.duration / 60)}分${interview.duration % 60}秒` : '--' },
           ].map((item, i) => (
-            <div key={i} className="flex items-center gap-2 text-indigo-100">
+            <div key={i} className="flex items-center gap-2 text-brand-100">
               <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} /></svg>
               <span className="text-sm">{item.label}</span>
             </div>
@@ -89,10 +91,10 @@ function DimensionSection({ radarData }: { radarData: { dimension: string; score
   return (
     <section className="mb-8">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">📊</span>
+        <span className="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm">📊</span>
         能力维度分析
       </h2>
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
         <ResponsiveContainer width="100%" height={400}>
           <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="80%">
             <PolarGrid stroke="#e5e7eb" />
@@ -113,23 +115,23 @@ function StatsSection({ stats, actualDuration }: { stats: ReportData['interview_
   if (!stats || Object.keys(stats).length === 0) return null
   const duration = actualDuration ?? stats.total_duration ?? 0
   const items = [
-    { label: '总题目数', value: stats.total_questions, unit: '道', color: 'text-indigo-600' },
-    { label: '总时长', value: duration > 0 ? `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}` : '--', unit: '', color: 'text-indigo-600' },
-    { label: '平均回答长度', value: stats.avg_answer_length, unit: '字', color: 'text-indigo-600' },
+    { label: '总题目数', value: stats.total_questions, unit: '道', color: 'text-brand-600' },
+    { label: '总时长', value: duration > 0 ? `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}` : '--', unit: '', color: 'text-brand-600' },
+    { label: '平均回答长度', value: stats.avg_answer_length, unit: '字', color: 'text-brand-600' },
     { label: '高分题目(≥8)', value: stats.high_score_questions, unit: '道', color: 'text-green-600' },
     { label: '低分题目(≤5)', value: stats.low_score_questions, unit: '道', color: 'text-red-600' },
   ]
   return (
     <section className="mb-8">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm">📈</span>
+        <span className="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm">📈</span>
         面试数据统计
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {items.map((item, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+          <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm text-center">
             <div className={`text-2xl font-black ${item.color}`}>{typeof item.value === 'number' ? item.value : item.value}{typeof item.value === 'number' && item.unit ? <span className="text-base font-normal text-gray-400 dark:text-gray-500">{item.unit}</span> : null}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">{item.label}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-500 mt-1">{item.label}</div>
           </div>
         ))}
       </div>
@@ -146,13 +148,13 @@ function QuestionReviewCard({ qr, isExpanded, onToggle }: {
   onToggle: () => void
 }) {
   const getScoreBg = (score: number) => {
-    if (score >= 8) return 'from-green-400 to-emerald-500'
+    if (score >= 8) return 'from-green-400 to-brand-500'
     if (score >= 6) return 'from-yellow-400 to-amber-500'
     return 'from-red-400 to-rose-500'
   }
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
-      <button onClick={onToggle} className="w-full px-5 py-4 flex items-center gap-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:bg-gray-950 transition-colors">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
+      <button onClick={onToggle} className="w-full px-5 py-4 flex items-center gap-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:bg-gray-900 transition-colors">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0 bg-gradient-to-br ${getScoreBg(qr.score)}`}>
           {qr.question_num}
         </div>
@@ -168,8 +170,8 @@ function QuestionReviewCard({ qr, isExpanded, onToggle }: {
       {isExpanded && (
         <div className="px-5 pb-5 border-t border-gray-50">
           <div className="mt-4 space-y-4">
-            <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-400">
-              <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">面试官提问</div>
+            <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-900/20 border-l-4 border-brand-400">
+              <div className="text-xs font-semibold text-brand-600 dark:text-brand-400 mb-1">面试官提问</div>
               <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{qr.question}</div>
             </div>
             <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400">
@@ -183,12 +185,12 @@ function QuestionReviewCard({ qr, isExpanded, onToggle }: {
               </div>
             )}
             {qr.highlights && qr.highlights.length > 0 && (
-              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-400">
-                <div className="text-xs font-semibold text-emerald-700 mb-2">✅ 回答亮点</div>
+              <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-900/20 border-l-4 border-brand-400">
+                <div className="text-xs font-semibold text-brand-700 mb-2">✅ 回答亮点</div>
                 <ul className="space-y-1">
                   {qr.highlights.map((h: string, i: number) => (
-                    <li key={i} className="text-sm text-emerald-700 flex items-start gap-2">
-                      <span className="mt-0.5 text-emerald-400">•</span>
+                    <li key={i} className="text-sm text-brand-700 flex items-start gap-2">
+                      <span className="mt-0.5 text-brand-400">•</span>
                       <span>{h}</span>
                     </li>
                   ))}
@@ -228,26 +230,26 @@ function SuggestionSection({ strengths, improvements }: { strengths: string[]; i
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {strengths.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
             <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center gap-2"><span>✅</span>优势分析</h3>
             <ul className="space-y-3">
               {strengths.map((s, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-green-100 text-green-600 dark:text-green-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600 leading-relaxed">{s}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{s}</span>
                 </li>
               ))}
             </ul>
           </div>
         )}
         {improvements.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
             <h3 className="text-lg font-bold text-amber-700 mb-4 flex items-center gap-2"><span>📈</span>改进建议</h3>
             <ul className="space-y-3">
               {improvements.map((imp, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">!</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600 leading-relaxed">{imp}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{imp}</span>
                 </li>
               ))}
             </ul>
@@ -262,7 +264,7 @@ function SuggestionSection({ strengths, improvements }: { strengths: string[]; i
 // 主组件
 // ═══════════════════════════════════════════════════
 export default function InterviewReport() {
-  const { dark, toggleTheme } = useTheme()
+  const { dark } = useTheme()
 
   const { id } = useParams<{ id: string }>()
   const [interview, setInterview] = useState<InterviewData | null>(null)
@@ -415,87 +417,21 @@ export default function InterviewReport() {
     }
   }
 
-  // 辅助函数：裁剪 canvas 的指定区域
-  const cropCanvas = (source: HTMLCanvasElement, sx: number, sy: number, sw: number, sh: number): HTMLCanvasElement => {
-    const c = document.createElement('canvas');
-    c.width = sw;
-    c.height = sh;
-    const ctx = c.getContext('2d');
-    ctx?.drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh);
-    return c;
-  };
-
   const handleExportPDF = async () => {
     if (!report || !interview || isExporting) return;
     setIsExporting(true);
     showToast('正在生成 PDF，请稍候...', 'info');
     
     try {
-      // 1. 截图报告内容（白色背景）
       const reportElement = reportRef.current;
       if (!reportElement) throw new Error('报告元素未找到');
       
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
+      const safeTitle = (interview.title || '面试报告').replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+      await exportReportToPDF(reportElement, `面试报告_${safeTitle}`, {
+        title: '面试报告',
       });
       
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      // 2. PDF 页面设置
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfPageWidth = pdf.internal.pageSize.getWidth();  // 210mm
-      const pdfPageHeight = pdf.internal.pageSize.getHeight(); // 297mm
-      
-      const margin = 10; // 边距 10mm
-      const headerH = 12; // 页眉高度
-      const footerH = 12; // 页脚高度
-      const contentX = margin;
-      const contentY = margin + headerH;
-      const contentW = pdfPageWidth - margin * 2;
-      const contentH = pdfPageHeight - margin * 2 - headerH - footerH;
-      
-      // 3. 计算分页：每一页能放多少像素的内容
-      const scale = contentW / imgWidth;
-      const pageContentHeightPx = contentH / scale; // 每一页能放的原图像素高度
-      const totalPages = Math.ceil(imgHeight / pageContentHeightPx);
-      
-      // 4. 逐页生成 PDF
-      for (let page = 0; page < totalPages; page++) {
-        if (page > 0) pdf.addPage();
-        
-        // 裁剪当前页对应的原图区域
-        const cropY = page * pageContentHeightPx;
-        const cropH = Math.min(pageContentHeightPx, imgHeight - cropY);
-        const croppedCanvas = cropCanvas(canvas, 0, cropY, imgWidth, cropH);
-        const croppedImgData = croppedCanvas.toDataURL('image/png');
-        
-        // 绘制页眉
-        pdf.setFontSize(9);
-        pdf.setTextColor(120, 120, 120);
-        pdf.text('简历面试AI助手 · 面试报告', margin, margin + headerH - 4);
-        pdf.text(new Date().toLocaleDateString('zh-CN'), pdfPageWidth - margin, margin + headerH - 4, { align: 'right' });
-        pdf.setDrawColor(220, 220, 220);
-        pdf.line(margin, margin + headerH, pdfPageWidth - margin, margin + headerH);
-        
-        // 绘制页脚
-        pdf.setFontSize(8);
-        pdf.setTextColor(150, 150, 150);
-        pdf.text(`第 ${page + 1} 页 / 共 ${totalPages} 页`, pdfPageWidth / 2, pdfPageHeight - margin - footerH + 4, { align: 'center' });
-        pdf.text('© 2024 简历面试AI助手 · 本报告由AI生成，仅供参考', pdfPageWidth / 2, pdfPageHeight - margin - 2, { align: 'center' });
-        
-        // 添加当前页内容图片
-        const pageImgH = cropH * scale;
-        pdf.addImage(croppedImgData, 'PNG', contentX, contentY, contentW, pageImgH);
-      }
-      
-      // 5. 保存 PDF
-      pdf.save(`面试报告_${(interview.title || 'report').replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
       showToast('PDF 导出成功！', 'success');
-      
     } catch (error) {
       console.error('PDF export failed:', error);
       showToast('PDF 导出失败，请重试', 'error');
@@ -507,8 +443,8 @@ export default function InterviewReport() {
   // ── 加载/错误状态 ─────────────────────────────────
   if (loading || generating) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center gap-4 ${dark ? 'bg-gray-950' : 'bg-gradient-to-br from-indigo-50 via-white to-purple-50'}`}>
-        <div className="w-16 h-16 border-4 border-indigo-200 dark:border-indigo-800 border-t-indigo-600 rounded-full animate-spin" />
+      <div className={`min-h-screen flex flex-col items-center justify-center gap-4 ${dark ? 'bg-gray-950' : 'bg-gradient-to-br from-brand-50 via-white to-brand-50'}`}>
+        <Loading size="lg" />
         <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">
           {generating ? 'AI 正在生成面试报告...' : '加载中...'}
         </p>
@@ -520,7 +456,7 @@ export default function InterviewReport() {
               </div>
               <div className="w-80 h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
+                  className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${progress.percent}%` }}
                 />
               </div>
@@ -530,26 +466,13 @@ export default function InterviewReport() {
     )
   }
 
-  if (error) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-      <div className="text-center max-w-md mx-auto px-4">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-        </div>
-        <p className="text-red-600 dark:text-red-400 font-medium mb-2">出错了</p>
-        <p className="text-gray-600 dark:text-gray-400 dark:text-gray-500 text-sm">{error}</p>
-        <button onClick={() => navigate('/interviews')} className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors">
-          返回面试列表
-        </button>
-      </div>
-    </div>
-  )
+  if (error) return <ErrorAlert message={error} />;
 
   if (!interview) return null
 
   // ── 主渲染 ────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950" ref={reportRef}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" ref={reportRef}>
       {/* 打印样式 */}
       <style>{`
         @media print {
@@ -593,20 +516,11 @@ export default function InterviewReport() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               导出PDF
             </button>
-            <button onClick={() => navigate('/interviews/new')} className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors font-medium">
+            <button onClick={() => navigate('/interviews/new')} className="px-4 py-2 text-sm rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors font-medium">
               再来一场
             </button>
-            <button onClick={toggleTheme} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title={dark ? '浅色模式' : '深色模式'}>
-              {dark ? (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
+<ThemeToggle />
+
           </div>
         </div>
       </nav>
@@ -618,9 +532,9 @@ export default function InterviewReport() {
 
         {/* 报告目录 */}
         <section className="mb-8 no-print">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">📋</span>
+              <span className="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm">📋</span>
               报告目录
             </h2>
             <nav className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -635,10 +549,10 @@ export default function InterviewReport() {
                 <a
                   key={item.id}
                   href={`#${item.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors group"
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-indigo-700 dark:group-hover:text-indigo-400">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-brand-700 dark:group-hover:text-brand-400">
                     {item.label}
                   </span>
                 </a>
@@ -657,7 +571,7 @@ export default function InterviewReport() {
             <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm">📊</span>
             各维度得分
           </h2>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={radarData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -679,7 +593,7 @@ export default function InterviewReport() {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm">📝</span>
             各题回顾
-            <button onClick={handleToggleAll} className="ml-auto text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-normal">
+            <button onClick={handleToggleAll} className="ml-auto text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-normal">
               {expandedQuestions.size === (questionReviews.length > 0 ? questionReviews.length : answers.length) ? '收起全部' : '展开全部'}
             </button>
           </h2>
@@ -709,7 +623,7 @@ export default function InterviewReport() {
               <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm">🔧</span>
               优化建议
             </h2>
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
               <ul className="space-y-3">
                 {report.optimization_suggestions.map((suggestion: string, i: number) => (
                   <li key={i} className="flex items-start gap-3">
@@ -726,10 +640,10 @@ export default function InterviewReport() {
         {report?.interview_review && (
           <section className="mb-8">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-teal-100 text-teal-600 dark:text-teal-400 flex items-center justify-center text-sm">📋</span>
+              <span className="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm">📋</span>
               面试模拟记录回顾
             </h2>
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
               <div className="space-y-4">
                 <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                   <span>📝 总题数：{report.interview_review.total_questions}题</span>
@@ -739,7 +653,7 @@ export default function InterviewReport() {
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">主要考察点：</p>
                   <div className="flex flex-wrap gap-2">
                     {(report.interview_review.main_topics || []).map((topic: string, i: number) => (
-                      <span key={i} className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-sm">{topic}</span>
+                      <span key={i} className="px-3 py-1 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 rounded-full text-sm">{topic}</span>
                     ))}
                   </div>
                 </div>
@@ -754,9 +668,9 @@ export default function InterviewReport() {
         {/* 最终建议 */}
         {report?.final_advice && (
           <section id="final-advice" className="mb-8">
-            <div className={`rounded-2xl p-6 sm:p-8 border border-indigo-100 dark:border-indigo-800 ${dark ? 'bg-gray-900' : 'bg-gradient-to-br from-indigo-50 to-purple-50'}`}>
-              <h2 className="text-xl font-bold text-indigo-900 dark:text-indigo-300 mb-4 flex items-center gap-2">
-                <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343 5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548-.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+            <div className={`rounded-2xl p-6 sm:p-8 border border-brand-100 dark:border-brand-800 ${dark ? 'bg-gray-900' : 'bg-gradient-to-br from-brand-50 to-brand-50'}`}>
+              <h2 className="text-xl font-bold text-brand-900 dark:text-brand-300 mb-4 flex items-center gap-2">
+                <svg className="w-6 h-6 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343 5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548-.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
                 AI 面试官的最终建议
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{report.final_advice}</p>
@@ -766,15 +680,15 @@ export default function InterviewReport() {
 
         {/* 底部操作区 */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 pb-12 no-print">
-          <button onClick={() => navigate('/interviews/new')} className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 duration-200 flex items-center justify-center gap-2">
+          <button onClick={() => navigate('/interviews/new')} className="px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-600 text-white rounded-xl font-semibold hover:from-brand-700 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-0.5 duration-200 flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             再来一场面试
           </button>
-          <button onClick={() => navigate('/interviews')} className="px-8 py-3 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-xl font-semibold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+          <button onClick={() => navigate('/interviews')} className="px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
             查看所有面试
           </button>
-          <button onClick={() => window.print()} className="px-8 py-3 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 dark:text-gray-600 rounded-xl font-semibold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:bg-gray-950 hover:border-gray-300 dark:border-gray-600 transition-all flex items-center justify-center gap-2 sm:hidden">
+          <button onClick={() => window.print()} className="px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-2 sm:hidden">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-4h6m-6 4v1a1 1 0 001 1h4a1 1 0 001-1v-1m-6 0h6" /></svg>
             打印报告
           </button>

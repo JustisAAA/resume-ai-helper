@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import AdminLayout from './AdminLayout';
+﻿import { useEffect, useState } from 'react';
+import AdminLayout from '../components/AdminLayout';
 import { adminAPI, AdminUser, AdminUserListResponse } from '../services/api';
 import ErrorAlert from '../components/ErrorAlert';
 import Loading from '../components/Loading';
@@ -26,12 +26,14 @@ const statusColor: Record<string, string> = {
 };
 
 const roleColor: Record<string, string> = {
-  USER:  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  USER:       'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  ENTERPRISE: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400',
+  HR:         'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400',
+  ADMIN:      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
 const statusLabel: Record<string, string> = { ACTIVE: '正常', BANNED: '已封禁' };
-const roleLabel: Record<string, string> = { USER: '普通用户', ADMIN: '管理员' };
+const roleLabel: Record<string, string> = { USER: '求职者', ENTERPRISE: '企业用户', HR: 'HR子账号', ADMIN: '管理员' };
 
 /* ── 主组件 ── */
 
@@ -97,15 +99,17 @@ export default function AdminUsers() {
         </div>
         <select
           value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
         >
           <option value="">全部角色</option>
-          <option value="USER">普通用户</option>
+          <option value="USER">求职者</option>
+          <option value="ENTERPRISE">企业用户</option>
+          <option value="HR">HR子账号</option>
           <option value="ADMIN">管理员</option>
         </select>
         <select
           value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
         >
           <option value="">全部状态</option>
           <option value="ACTIVE">正常</option>

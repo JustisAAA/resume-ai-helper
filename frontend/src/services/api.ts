@@ -61,6 +61,34 @@ export interface Resume {
   updatedAt: string;
 }
 
+export interface InterviewAnswer {
+  answer: string;
+  score?: number;
+  comment?: string;
+  highlights?: string[];
+  improvements?: string[];
+}
+
+export interface InterviewQuestionReview {
+  questionNum: number;
+  question: string;
+  answer: string;
+  score: number;
+  feedback: string;
+}
+
+export interface InterviewFeedback {
+  overallScore?: number;
+  passProbability?: number;
+  dimensionScores?: Record<string, number>;
+  questionReviews?: InterviewQuestionReview[];
+  strengths?: string[];
+  weaknesses?: string[];
+  recommendation?: 'HIRE' | 'REJECT';
+  summary?: string;
+  enterpriseEvaluation?: InterviewFeedback;
+}
+
 export interface Interview {
   id: string;
   title: string;
@@ -71,7 +99,7 @@ export interface Interview {
   currentQuestion?: string;
   questions?: string[];
   startedAt?: string;
-  answers?: any[];
+  answers?: InterviewAnswer[];
   messages?: Array<{
     role: 'assistant' | 'user';
     content: string;
@@ -81,15 +109,124 @@ export interface Interview {
   updatedAt: string;
   completedAt?: string | null;
   duration?: number | null;
-  resume?: { title: string };
-  feedback?: any;
+  resume?: {
+    id: string;
+    title: string;
+    score?: number;
+  };
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  feedback?: InterviewFeedback;
 }
 
 export interface ToolRequest {
   resumeId?: string;
   resume?: string;
   position?: string;
-  [key: string]: any;
+  keywords?: string;
+  jd?: string;
+  targetRole?: string;
+  question?: string;
+  count?: number;
+  mode?: string;
+  scene?: string;
+}
+
+export interface AIAnalysisSummary {
+  totalScore: number;
+  passed: boolean;
+  verdict: string;
+  scoringPoints: { name: string; score: number; comment: string }[];
+  strengths: string[];
+  weaknesses: string[];
+  summary: string;
+  scoringConfig: ScoringConfig;
+}
+
+export interface Application {
+  id: string;
+  userId: string;
+  jobId: string;
+  status: 'PENDING' | 'REVIEWED' | 'SHORTLISTED' | 'REJECTED' | 'INTERVIEWED';
+  coverLetter?: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  aiAnalysis?: AIAnalysisSummary;
+  resume?: ResumeDetail;
+  job: {
+    id: string;
+    title: string;
+  };
+}
+
+export interface ResumeDetail {
+  id: string;
+  title: string;
+  fileName?: string;
+  fileUrl?: string;
+  content?: string;
+  score?: number;
+  skills?: string[];
+  experience?: string;
+  education?: string;
+  summary?: string;
+  aiAnalysis?: AIAnalysisSummary;
+}
+
+export interface ScoringConfig {
+  criteria: Array<{
+    name: string;
+    weight: number;
+    description?: string;
+  }>;
+  maxScore?: number;
+}
+
+export interface AIAnalysis {
+  overallScore: number;
+  criteriaScores: Array<{
+    criterion: string;
+    score: number;
+    feedback: string;
+  }>;
+  strengths: string[];
+  weaknesses: string[];
+  recommendation: string;
+  summary: string;
+}
+
+export interface InterviewConfig {
+  difficulty?: string;
+  questionCount?: number;
+  duration?: number;
+  position?: string;
+  keywords?: string[];
+  abilities?: string[];
+  questions?: string[];
+  perQuestionTimeLimit?: number;
+}
+
+export interface InterviewReport {
+  interview: Interview;
+  report: {
+    overallScore: number;
+    passProbability: number;
+    dimensionScores: Record<string, number>;
+    questionReviews: InterviewQuestionReview[];
+    strengths: string[];
+    weaknesses: string[];
+    recommendation: 'HIRE' | 'REJECT';
+    summary: string;
+  };
 }
 
 // ==================== Auth API ====================
@@ -236,9 +373,11 @@ export const resumeAPI = {
 export const interviewAPI = {
   /**
    * 获取面试列表
+   * @param type 可选，'ENTERPRISE' | 'PRACTICE' 过滤类型
    */
-  async list(token: string): Promise<Interview[]> {
-    const res = await axios.get(getApiUrl('/interviews'), {
+  async list(token: string, type?: string): Promise<{ interviews: Interview[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+    const params = type ? `?type=${type}` : '';
+    const res = await axios.get(getApiUrl(`/interviews${params}`), {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.data;
@@ -301,10 +440,95 @@ export const interviewAPI = {
   },
 
   /**
+   * 提交回答（SSE 流式版本）
+   * 使用 fetch + ReadableStream 接收 SSE 事件
+   */
+  answerStream: (
+    token: string,
+    id: string,
+    data: { answer: string; timeSpent?: number },
+    callbacks: {
+      onDelta: (text: string) => void;
+      onDone: (result: {
+        evaluation: { score: number; comment: string; highlights: string[]; improvements: string[] };
+        nextQuestion: string;
+        questionType?: string;
+        mock?: boolean;
+        interview?: Interview;
+      }) => void;
+      onError: (error: string) => void;
+    }
+  ): AbortController => {
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const response = await fetch(getApiUrl(`/interviews/${id}/answer`), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `请求失败 (${response.status})`);
+        }
+
+        if (!response.body) throw new Error('不支持流式响应');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          // 保留最后一个可能不完整的行
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const event = JSON.parse(line.slice(6));
+                if (event.type === 'delta') {
+                  callbacks.onDelta(event.content);
+                } else if (event.type === 'done') {
+                  callbacks.onDone({
+                    evaluation: event.evaluation,
+                    nextQuestion: event.nextQuestion || '',
+                    questionType: event.questionType,
+                    mock: event.mock,
+                    interview: event.interview,
+                  });
+                } else if (event.type === 'error') {
+                  callbacks.onError(event.message || '未知错误');
+                }
+              } catch { /* skip unparseable lines */ }
+            }
+          }
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') {
+          callbacks.onError(err.message || '请求失败');
+        }
+      }
+    })();
+
+    return controller;
+  },
+
+  /**
    * 退出面试
    */
   async exit(token: string, id: string): Promise<void> {
-    await axios.post(getApiUrl(`/interviews/${id}/exit`), {}, {
+    await axios.post(getApiUrl(`/interviews/${id}/end`), {}, {
       headers: { Authorization: `Bearer ${token}` }
     });
   },
@@ -312,7 +536,7 @@ export const interviewAPI = {
   /**
    * 生成面试报告 (SSE流式)
    */
-  async generateReport(token: string, id: string, onProgress?: (progress: { step: string; percent: number; message: string }) => void): Promise<{ report: any; interview: any }> {
+  async generateReport(token: string, id: string, onProgress?: (progress: { step: string; percent: number; message: string }) => void): Promise<{ report: InterviewFeedback; interview: Interview }> {
     const response = await fetch(getApiUrl(`/interviews/${id}/report`), {
       method: 'POST',
       headers: {
@@ -357,9 +581,9 @@ export const interviewAPI = {
             } else if (data.type === 'error') {
               throw new Error(data.error || '生成报告失败');
             }
-          } catch (e: any) {
+          } catch (e: unknown) {
             console.error('SSE parse error:', e);
-            if (e.message) throw e;
+            if (e instanceof Error) throw e;
           }
         }
       }
@@ -458,18 +682,24 @@ export default {
 
 export interface AdminStats {
   userCount: number;
-  resumeCount: number;
+  enterpriseCount: number;
+  jobCount: number;
+  applicationCount: number;
   interviewCount: number;
   reportCount: number;
+  pendingReportCount: number;
   newUsersToday: number;
-  newResumesToday: number;
+  newEnterprisesToday: number;
+  userRoleCount: number;
+  enterpriseRoleCount: number;
+  adminRoleCount: number;
 }
 
 export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'ENTERPRISE' | 'HR' | 'ADMIN';
   status: 'ACTIVE' | 'BANNED';
   createdAt: string;
   _count?: {
@@ -491,9 +721,9 @@ export const adminAPI = {
    * 获取系统统计数据
    */
   async getStats(token: string): Promise<AdminStats> {
-    const res = await import('axios').then(m => m.default.get(getApiUrl('/admin/stats'), {
+    const res = await axios.get(getApiUrl('/admin/stats'), {
       headers: { Authorization: `Bearer ${token}` }
-    }));
+    });
     return res.data;
   },
 
@@ -513,9 +743,9 @@ export const adminAPI = {
     if (params.search) query.set('search', params.search);
     if (params.role) query.set('role', params.role);
     if (params.status) query.set('status', params.status);
-    const res = await import('axios').then(m => m.default.get(getApiUrl(`/admin/users?${query.toString()}`), {
+    const res = await axios.get(getApiUrl(`/admin/users?${query.toString()}`), {
       headers: { Authorization: `Bearer ${token}` }
-    }));
+    });
     return res.data;
   },
 
@@ -525,9 +755,9 @@ export const adminAPI = {
   async updateUser(token: string, userId: string, data: {
     status?: 'ACTIVE' | 'BANNED';
   }): Promise<{ user: AdminUser }> {
-    const res = await import('axios').then(m => m.default.put(getApiUrl(`/admin/users/${userId}`), data, {
+    const res = await axios.put(getApiUrl(`/admin/users/${userId}`), data, {
       headers: { Authorization: `Bearer ${token}` }
-    }));
+    });
     return res.data;
   },
 
@@ -535,9 +765,9 @@ export const adminAPI = {
    * 删除用户
    */
   async deleteUser(token: string, userId: string): Promise<void> {
-    await import('axios').then(m => m.default.delete(getApiUrl(`/admin/users/${userId}`), {
+    await axios.delete(getApiUrl(`/admin/users/${userId}`), {
       headers: { Authorization: `Bearer ${token}` }
-    }));
+    });
   }
 };
 
@@ -628,6 +858,21 @@ export const enterpriseAPI = {
   },
 
   /**
+   * 获取Dashboard统计数据
+   */
+  async getDashboardStats(): Promise<{
+    funnel: { applied: number; screened: number; interviewed: number; hired: number };
+    applicationTrend: { date: string; count: number }[];
+    jobPopularity: { jobId: string; title: string; count: number }[];
+  }> {
+    const token = localStorage.getItem('token');
+    const res = await axios.get(getApiUrl('/enterprise/dashboard/stats'), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  /**
    * 更新企业资料
    */
   async updateProfile(token: string, data: Partial<EnterpriseRegisterRequest>): Promise<{ enterprise: Enterprise }> {
@@ -640,40 +885,83 @@ export const enterpriseAPI = {
   /**
    * 获取职位的申请列表
    */
-  async getApplications(jobId: string): Promise<{ applications: any[] }> {
-    const res = await axios.get(getApiUrl(`/jobs/${jobId}/applications`));
+  async getApplications(jobId: string, page?: number): Promise<{ applications: Application[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams();
+    if (page) params.set('page', String(page));
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    const res = await axios.get(getApiUrl(`/jobs/${jobId}/applications${queryStr}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return res.data;
   },
 
   /**
    * 更新申请状态
    */
-  async updateStatus(applicationId: string, status: string): Promise<{ application: any }> {
-    const res = await axios.patch(getApiUrl(`/applications/${applicationId}/status`), { status });
+  async updateStatus(applicationId: string, status: string): Promise<{ application: Application }> {
+    const token = localStorage.getItem('token');
+    const res = await axios.put(getApiUrl(`/applications/${applicationId}/status`), { status }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return res.data;
   },
 
   /**
    * 获取申请简历详情
    */
-  async getResume(applicationId: string): Promise<{ resume: any }> {
-    const res = await axios.get(getApiUrl(`/applications/${applicationId}/resume`));
+  async getResume(applicationId: string): Promise<{ resume: ResumeDetail; application?: Application }> {
+    const token = localStorage.getItem('token');
+    const res = await axios.get(getApiUrl(`/applications/${applicationId}/resume`), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  /**
+   * AI简历评分分析
+   */
+  async aiAnalyze(applicationId: string, scoringConfig: ScoringConfig): Promise<{ message: string; analysis: AIAnalysis }> {
+    const token = localStorage.getItem('token');
+    const res = await axios.post(getApiUrl(`/applications/${applicationId}/ai-analyze`), { scoringConfig }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  /**
+   * 创建面试邀请（企业端）
+   */
+  async createInterview(applicationId: string, interviewConfig?: InterviewConfig): Promise<{ message: string; interview: Interview }> {
+    const token = localStorage.getItem('token');
+    const res = await axios.post(getApiUrl('/enterprise/interviews'), { applicationId, interviewConfig }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return res.data;
   },
 
   /**
    * 获取企业面试列表
    */
-  async getInterviews(): Promise<{ interviews: any[] }> {
-    const res = await axios.get(getApiUrl('/enterprise/interviews'));
+  async getInterviews(page?: number): Promise<{ interviews: Interview[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams();
+    if (page) params.set('page', String(page));
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    const res = await axios.get(getApiUrl(`/enterprise/interviews${queryStr}`), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return res.data;
   },
 
   /**
    * 获取面试报告
    */
-  async getReport(interviewId: string): Promise<{ report: any }> {
-    const res = await axios.get(getApiUrl(`/enterprise/interviews/${interviewId}/report`));
+  async getReport(interviewId: string): Promise<{ data: InterviewReport }> {
+    const token = localStorage.getItem('token');
+    const res = await axios.get(getApiUrl(`/enterprise/interviews/${interviewId}/report`), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return res.data;
   }
 };
@@ -687,6 +975,8 @@ export interface JobCreateRequest {
   salaryRange?: string;
   location?: string;
   type?: string;
+  images?: string[];
+  keywords?: string[];
 }
 
 export interface JobUpdateRequest {
@@ -697,6 +987,8 @@ export interface JobUpdateRequest {
   location?: string;
   type?: string;
   status?: 'ACTIVE' | 'CLOSED' | 'DRAFT';
+  images?: string[];
+  keywords?: string[];
 }
 
 export interface Job {
@@ -709,6 +1001,8 @@ export interface Job {
   location?: string;
   type?: string;
   status: 'ACTIVE' | 'CLOSED' | 'DRAFT';
+  images?: string[];
+  keywords?: string[];
   createdAt: string;
   updatedAt: string;
   enterprise?: {
@@ -750,10 +1044,15 @@ export const jobAPI = {
   /**
    * 获取职位列表
    */
-  async list(params?: { enterpriseId?: string; status?: string }): Promise<{ jobs: Job[] }> {
+  async list(params?: { enterpriseId?: string; status?: string; keyword?: string; location?: string; type?: string; page?: number; limit?: number }): Promise<{ jobs: Job[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
     const query = new URLSearchParams();
     if (params?.enterpriseId) query.set('enterpriseId', params.enterpriseId);
     if (params?.status) query.set('status', params.status);
+    if (params?.keyword) query.set('keyword', params.keyword);
+    if (params?.location) query.set('location', params.location);
+    if (params?.type) query.set('type', params.type);
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
     const res = await axios.get(getApiUrl(`/jobs?${query.toString()}`));
     return res.data;
   },

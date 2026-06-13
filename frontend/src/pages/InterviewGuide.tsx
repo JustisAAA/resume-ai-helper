@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useTheme } from '../context/ThemeContext'
+import ThemeToggle from '../components/ThemeToggle'
 import { interviewAPI } from '../services/api'
+import Loading from '../components/Loading'
+import ErrorAlert from '../components/ErrorAlert'
 
 interface Interview {
   id: string
@@ -17,7 +19,6 @@ export default function InterviewGuide() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { dark, toggleTheme } = useTheme()
 
   useEffect(() => {
     fetchInterview()
@@ -50,34 +51,12 @@ export default function InterviewGuide() {
   const difficultyLabel = interview?.difficulty === 'EASY' ? '简单' : 
                           interview?.difficulty === 'HARD' ? '困难' : '中等'
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400">加载中...</p>
-      </div>
-    </div>
-  )
+  if (loading) return <Loading fullScreen size="md" text="加载中..." />;
 
-  if (error) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-      <div className="text-center max-w-md mx-auto px-4">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-        </div>
-        <p className="text-red-600 dark:text-red-400 font-medium mb-2">出错了</p>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">{error}</p>
-        <button onClick={handleBack} className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors">
-          返回面试列表
-        </button>
-      </div>
-    </div>
-  )
+  if (error) return <ErrorAlert message={error} />;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 顶部导航 */}
       <nav className="bg-white dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 flex justify-between items-center h-16">
@@ -93,27 +72,13 @@ export default function InterviewGuide() {
             </button>
             <span className="text-lg font-semibold text-gray-900 dark:text-white">面试准备</span>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            title={dark ? '浅色模式' : '深色模式'}
-          >
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.001 9.001 0 0012 21a9.001 9.001 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
+          <ThemeToggle />
         </div>
       </nav>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* 面试信息卡片 */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{interview?.title}</h1>
@@ -125,8 +90,8 @@ export default function InterviewGuide() {
                   {interview?.position || '通用岗位'}
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  interview?.difficulty === 'EASY' ? 'bg-green-100 text-green-700' :
-                  interview?.difficulty === 'HARD' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                  interview?.difficulty === 'EASY' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                  interview?.difficulty === 'HARD' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                 }`}>
                   {difficultyLabel}
                 </span>
@@ -139,9 +104,9 @@ export default function InterviewGuide() {
         </div>
 
         {/* 面试流程说明 */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">📋</span>
+            <span className="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm">📋</span>
             面试流程
           </h2>
           <div className="space-y-4">
@@ -151,8 +116,8 @@ export default function InterviewGuide() {
               { step: 3, title: 'AI 评估反馈', desc: '每题回答后，AI 会给出评分和详细反馈，帮助你了解表现。' },
               { step: 4, title: '查看面试报告', desc: '面试结束后，系统生成详细报告，包括得分、能力分析和改进建议。' },
             ].map((item) => (
-              <div key={item.step} className="flex gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold shrink-0">
+              <div key={item.step} className="flex gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                <div className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center text-sm font-bold shrink-0">
                   {item.step}
                 </div>
                 <div>
@@ -165,7 +130,7 @@ export default function InterviewGuide() {
         </div>
 
         {/* 注意事项 */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm">⚠️</span>
             注意事项
@@ -189,7 +154,7 @@ export default function InterviewGuide() {
         </div>
 
         {/* 示例问题 */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-green-100 text-green-600 dark:text-green-400 flex items-center justify-center text-sm">💡</span>
             示例问题
@@ -213,7 +178,7 @@ export default function InterviewGuide() {
         <div className="text-center pt-4">
           <button
             onClick={handleStartInterview}
-            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 duration-200 inline-flex items-center gap-2"
+            className="px-8 py-4 bg-gradient-to-r from-brand-600 to-brand-600 text-white rounded-xl font-semibold text-lg hover:from-brand-700 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-0.5 duration-200 inline-flex items-center gap-2"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />

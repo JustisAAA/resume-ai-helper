@@ -1,4 +1,4 @@
-export interface ResumeTemplate {
+﻿export interface ResumeTemplate {
   id: string
   name: string
   description: string
@@ -51,7 +51,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     description: '极简风格，适合应届生和管培生申请',
     thumbnail: 'simple',
     category: 'simple',
-    color: 'from-teal-500 to-emerald-500',
-    bgGradient: 'from-teal-50 to-emerald-100'
+    color: 'from-brand-500 to-brand-500',
+    bgGradient: 'from-brand-50 to-brand-100'
   }
 ]
