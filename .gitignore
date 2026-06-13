@@ -19,6 +19,9 @@ dist/
 /frontend/build/
 /backend/dist/
 
+# ===== package-lock (在 Linux 上重新生成本地 native 模块) =====
+/frontend/package-lock.json
+
 # ===== 数据库 =====
 *.db
 *.db-journal
