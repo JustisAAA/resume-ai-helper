@@ -1,4 +1,4 @@
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { parsePagination, buildPagination } from '../utils/pagination';
@@ -7,7 +7,7 @@ import { JWT_SECRET, BCRYPT_SALT_ROUNDS } from '../config';
 // ========== 登录 ==========
 
 export async function hrLogin(email: string, password: string) {
-  const user = await prisma.user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: { email },
     include: { hrAccount: { include: { enterprise: true, job: true } } }
   });
@@ -65,7 +65,7 @@ export async function hrLogin(email: string, password: string) {
 // ========== 首页信息 ==========
 
 export async function getHRDashboard(userId: string) {
-  const user = await prisma.user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: { id: userId },
     include: {
       hrAccount: {
@@ -116,7 +116,7 @@ export async function getHRDashboard(userId: string) {
 // ========== 申请管理 ==========
 
 export async function getHRApplications(userId: string, pagination?: { page?: number; limit?: number }) {
-  const hrAccount = await prisma.hRAccount.findUnique({
+  const hrAccount = await getPrisma().hRAccount.findUnique({
     where: { userId },
     select: { jobId: true }
   });
@@ -125,14 +125,14 @@ export async function getHRApplications(userId: string, pagination?: { page?: nu
   const { page, limit, skip } = parsePagination(pagination);
 
   const [applications, total] = await Promise.all([
-    prisma.application.findMany({
+    getPrisma().application.findMany({
       where: { jobId: hrAccount.jobId },
       include: { user: true, resume: true, job: true },
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
     }),
-    prisma.application.count({ where: { jobId: hrAccount.jobId } })
+    getPrisma().application.count({ where: { jobId: hrAccount.jobId } })
   ]);
 
   return {
@@ -142,13 +142,13 @@ export async function getHRApplications(userId: string, pagination?: { page?: nu
 }
 
 export async function getHRApplicationResume(userId: string, applicationId: string) {
-  const hrAccount = await prisma.hRAccount.findUnique({
+  const hrAccount = await getPrisma().hRAccount.findUnique({
     where: { userId },
     select: { jobId: true }
   });
   if (!hrAccount) throw new Error('HR账号不存在');
 
-  const app = await prisma.application.findUnique({
+  const app = await getPrisma().application.findUnique({
     where: { id: applicationId },
     include: {
       resume: true,
@@ -176,18 +176,18 @@ export async function getHRApplicationResume(userId: string, applicationId: stri
 }
 
 export async function updateHRApplicationStatus(userId: string, applicationId: string, status: string) {
-  const hrAccount = await prisma.hRAccount.findUnique({
+  const hrAccount = await getPrisma().hRAccount.findUnique({
     where: { userId },
     select: { jobId: true }
   });
   if (!hrAccount) throw new Error('HR账号不存在');
 
-  const app = await prisma.application.findUnique({ where: { id: applicationId } });
+  const app = await getPrisma().application.findUnique({ where: { id: applicationId } });
   if (!app || app.jobId !== hrAccount.jobId) {
     throw new Error('无权操作该申请');
   }
 
-  return prisma.application.update({
+  return getPrisma().application.update({
     where: { id: applicationId },
     data: { status: status as any },
     include: { user: true, job: true }
@@ -203,7 +203,7 @@ export async function updateHRProfile(userId: string, data: { name?: string; pas
 
   if (Object.keys(updateData).length === 0) throw new Error('没有要更新的内容');
 
-  const user = await prisma.user.update({
+  const user = await getPrisma().user.update({
     where: { id: userId },
     data: updateData,
     select: { id: true, email: true, name: true, role: true }
@@ -211,7 +211,7 @@ export async function updateHRProfile(userId: string, data: { name?: string; pas
 
   // 同步HRAccount中的name
   if (data.name) {
-    await prisma.hRAccount.update({
+    await getPrisma().hRAccount.update({
       where: { userId },
       data: { name: data.name }
     });
@@ -223,26 +223,26 @@ export async function updateHRProfile(userId: string, data: { name?: string; pas
 // ========== 企业组长：创建HR账号 ==========
 
 export async function createHRAccount(enterpriseUserId: string, jobId: string, hrEmail: string, hrPassword: string, hrName: string) {
-  const enterprise = await prisma.enterprise.findUnique({ where: { userId: enterpriseUserId } });
+  const enterprise = await getPrisma().enterprise.findUnique({ where: { userId: enterpriseUserId } });
   if (!enterprise) throw new Error('企业不存在');
 
-  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  const job = await getPrisma().job.findUnique({ where: { id: jobId } });
   if (!job || job.enterpriseId !== enterprise.id) throw new Error('职位不属于该企业');
 
   // 检查该职位是否已有HR
-  const existing = await prisma.hRAccount.findUnique({ where: { jobId } });
+  const existing = await getPrisma().hRAccount.findUnique({ where: { jobId } });
   if (existing) throw new Error('该职位已有HR账号');
 
   // 检查邮箱是否被占用
-  const emailTaken = await prisma.user.findUnique({ where: { email: hrEmail } });
+  const emailTaken = await getPrisma().user.findUnique({ where: { email: hrEmail } });
   if (emailTaken) throw new Error('该邮箱已被占用');
 
   const hash = bcrypt.hashSync(hrPassword, BCRYPT_SALT_ROUNDS);
-  const user = await prisma.user.create({
+  const user = await getPrisma().user.create({
     data: { email: hrEmail, passwordHash: hash, name: hrName, role: 'HR' }
   });
 
-  const hrAccount = await prisma.hRAccount.create({
+  const hrAccount = await getPrisma().hRAccount.create({
     data: {
       userId: user.id,
       enterpriseId: enterprise.id,
@@ -257,13 +257,13 @@ export async function createHRAccount(enterpriseUserId: string, jobId: string, h
 // ========== 企业组长：管理HR ==========
 
 export async function getEnterpriseHRs(enterpriseUserId: string, pagination?: { page?: number; limit?: number }) {
-  const enterprise = await prisma.enterprise.findUnique({ where: { userId: enterpriseUserId } });
+  const enterprise = await getPrisma().enterprise.findUnique({ where: { userId: enterpriseUserId } });
   if (!enterprise) throw new Error('企业不存在');
 
   const { page, limit, skip } = parsePagination(pagination);
 
   const [hrs, total] = await Promise.all([
-    prisma.hRAccount.findMany({
+    getPrisma().hRAccount.findMany({
       where: { enterpriseId: enterprise.id },
       include: {
         user: { select: { email: true, status: true } },
@@ -273,7 +273,7 @@ export async function getEnterpriseHRs(enterpriseUserId: string, pagination?: { 
       skip,
       take: limit,
     }),
-    prisma.hRAccount.count({ where: { enterpriseId: enterprise.id } })
+    getPrisma().hRAccount.count({ where: { enterpriseId: enterprise.id } })
   ]);
 
   return {
@@ -283,32 +283,32 @@ export async function getEnterpriseHRs(enterpriseUserId: string, pagination?: { 
 }
 
 export async function toggleHRActive(enterpriseUserId: string, hrAccountId: string, isActive: boolean) {
-  const enterprise = await prisma.enterprise.findUnique({ where: { userId: enterpriseUserId } });
+  const enterprise = await getPrisma().enterprise.findUnique({ where: { userId: enterpriseUserId } });
   if (!enterprise) throw new Error('企业不存在');
 
-  const hr = await prisma.hRAccount.findUnique({ where: { id: hrAccountId } });
+  const hr = await getPrisma().hRAccount.findUnique({ where: { id: hrAccountId } });
   if (!hr || hr.enterpriseId !== enterprise.id) throw new Error('无权操作');
 
-  return prisma.hRAccount.update({
+  return getPrisma().hRAccount.update({
     where: { id: hrAccountId },
     data: { isActive }
   });
 }
 
 export async function reassignHRJob(enterpriseUserId: string, hrAccountId: string, newJobId: string) {
-  const enterprise = await prisma.enterprise.findUnique({ where: { userId: enterpriseUserId } });
+  const enterprise = await getPrisma().enterprise.findUnique({ where: { userId: enterpriseUserId } });
   if (!enterprise) throw new Error('企业不存在');
 
-  const hr = await prisma.hRAccount.findUnique({ where: { id: hrAccountId } });
+  const hr = await getPrisma().hRAccount.findUnique({ where: { id: hrAccountId } });
   if (!hr || hr.enterpriseId !== enterprise.id) throw new Error('无权操作');
 
-  const job = await prisma.job.findUnique({ where: { id: newJobId } });
+  const job = await getPrisma().job.findUnique({ where: { id: newJobId } });
   if (!job || job.enterpriseId !== enterprise.id) throw new Error('职位不属于该企业');
 
-  const existing = await prisma.hRAccount.findUnique({ where: { jobId: newJobId } });
+  const existing = await getPrisma().hRAccount.findUnique({ where: { jobId: newJobId } });
   if (existing && existing.id !== hrAccountId) throw new Error('该职位已有HR');
 
-  return prisma.hRAccount.update({
+  return getPrisma().hRAccount.update({
     where: { id: hrAccountId },
     data: { jobId: newJobId }
   });

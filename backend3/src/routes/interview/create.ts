@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { prisma } from '../../index';
+import { getPrisma } from '../../index';
 import { authenticateToken, requireUser, AuthRequest } from '../../middleware/auth';
 import { sanitizeError } from '../../utils/sanitize';
 
@@ -11,7 +11,7 @@ router.post('/', authenticateToken, requireUser, async (req: AuthRequest, res: R
     const userId = req.user!.userId;
     const { resumeId, title, position, difficulty, language, aiRole } = req.body;
     
-    const interview = await prisma.interview.create({
+    const interview = await getPrisma().interview.create({
       data: {
         userId,
         resumeId,

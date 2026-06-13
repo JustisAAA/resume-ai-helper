@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { JWT_SECRET } from '../config';
 
 // 扩展 Request 类型，添加 user 字段
@@ -28,7 +28,7 @@ export async function authenticateToken(
   const token = authHeader.substring(7);
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
-    const user = await prisma.user.findUnique({
+    const user = await getPrisma().user.findUnique({
       where: { id: decoded.userId },
       select: { id: true, email: true, role: true, status: true }
     });

@@ -6,7 +6,7 @@ import {
 } from '../services/applicationService';
 import { authenticateToken, requireEnterprise } from '../middleware/auth';
 import { ApplicationStatus } from '@prisma/client';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.patch('/:id/status', authenticateToken, requireEnterprise, async (req: Re
     }
 
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 
@@ -79,7 +79,7 @@ router.get('/:id/resume', authenticateToken, requireEnterprise, async (req: Requ
     const { id } = req.params;
 
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 
@@ -120,7 +120,7 @@ router.get('/:id', authenticateToken, requireEnterprise, async (req: Request, re
     const { id } = req.params;
 
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 

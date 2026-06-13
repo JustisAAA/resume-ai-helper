@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { authenticateToken, requireAdmin, AuthRequest } from '../middleware/auth';
 import { sanitizeError } from '../utils/sanitize';
 
@@ -11,28 +11,28 @@ const router = Router();
 router.get('/stats', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const [userCount, enterpriseCount, jobCount, applicationCount, interviewCount, reportCount, pendingReportCount] = await Promise.all([
-      prisma.user.count(),
-      prisma.enterprise.count(),
-      prisma.job.count(),
-      prisma.application.count(),
-      prisma.interview.count(),
-      prisma.complaint.count(),
-      prisma.complaint.count({ where: { status: 'PENDING' } })
+      getPrisma().user.count(),
+      getPrisma().enterprise.count(),
+      getPrisma().job.count(),
+      getPrisma().application.count(),
+      getPrisma().interview.count(),
+      getPrisma().complaint.count(),
+      getPrisma().complaint.count({ where: { status: 'PENDING' } })
     ]);
 
     // 今日新增统计
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const [newUsersToday, newEnterprisesToday] = await Promise.all([
-      prisma.user.count({ where: { createdAt: { gte: today } } }),
-      prisma.enterprise.count({ where: { createdAt: { gte: today } } })
+      getPrisma().user.count({ where: { createdAt: { gte: today } } }),
+      getPrisma().enterprise.count({ where: { createdAt: { gte: today } } })
     ]);
 
     // 角色分布
     const [userRoleCount, enterpriseRoleCount, adminRoleCount] = await Promise.all([
-      prisma.user.count({ where: { role: 'USER' } }),
-      prisma.user.count({ where: { role: 'ENTERPRISE' } }),
-      prisma.user.count({ where: { role: 'ADMIN' } })
+      getPrisma().user.count({ where: { role: 'USER' } }),
+      getPrisma().user.count({ where: { role: 'ENTERPRISE' } }),
+      getPrisma().user.count({ where: { role: 'ADMIN' } })
     ]);
 
     res.json({
@@ -77,7 +77,7 @@ router.get('/users', authenticateToken, requireAdmin, async (req: AuthRequest, r
     if (status) where.status = status;
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
+      getPrisma().user.findMany({
         where,
         select: {
           id: true, email: true, name: true, role: true, status: true,
@@ -87,7 +87,7 @@ router.get('/users', authenticateToken, requireAdmin, async (req: AuthRequest, r
         skip: (page - 1) * pageSize,
         take: pageSize
       }),
-      prisma.user.count({ where })
+      getPrisma().user.count({ where })
     ]);
 
     res.json({ users, total, page, pageSize });
@@ -100,7 +100,7 @@ router.get('/users', authenticateToken, requireAdmin, async (req: AuthRequest, r
 // 获取用户详情
 router.get('/users/:id', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await getPrisma().user.findUnique({
       where: { id: req.params.id },
       select: {
         id: true, email: true, name: true, role: true, status: true,
@@ -126,7 +126,7 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req: AuthReques
     const userId = req.params.id;
 
     // 检查目标用户
-    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    const targetUser = await getPrisma().user.findUnique({ where: { id: userId } });
     if (!targetUser) {
       return res.status(404).json({ error: '用户不存在' });
     }
@@ -144,7 +144,7 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req: AuthReques
       updateData.status = status;
     }
 
-    const user = await prisma.user.update({
+    const user = await getPrisma().user.update({
       where: { id: userId },
       data: updateData,
       select: { id: true, email: true, name: true, role: true, status: true }
@@ -163,7 +163,7 @@ router.delete('/users/:id', authenticateToken, requireAdmin, async (req: AuthReq
     const userId = req.params.id;
 
     // 检查用户是否存在
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await getPrisma().user.findUnique({ where: { id: userId } });
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }
@@ -174,7 +174,7 @@ router.delete('/users/:id', authenticateToken, requireAdmin, async (req: AuthReq
     }
 
     // 删除用户（级联删除相关数据）
-    await prisma.user.delete({ where: { id: userId } });
+    await getPrisma().user.delete({ where: { id: userId } });
 
     res.json({ message: '用户已删除' });
   } catch (error) {

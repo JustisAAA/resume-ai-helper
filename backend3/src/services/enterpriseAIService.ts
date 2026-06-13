@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 
 const APPID = process.env.YUANQI_ENTERPRISE_APPID || '';
 const APPKEY = process.env.YUANQI_ENTERPRISE_APPKEY || '';
@@ -109,7 +109,7 @@ export async function analyzeApplicationResume(
   config: ScoringConfig,
   enterpriseUserId: string
 ) {
-  const app = await prisma.application.findUnique({
+  const app = await getPrisma().application.findUnique({
     where: { id: applicationId },
     include: {
       resume: true,
@@ -140,7 +140,7 @@ export async function analyzeApplicationResume(
   if (!result) throw new Error('AI分析未返回结果');
 
   // 存入数据库
-  await prisma.application.update({
+  await getPrisma().application.update({
     where: { id: applicationId },
     data: { aiAnalysis: result as any }
   });

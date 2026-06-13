@@ -1,4 +1,4 @@
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { ApplicationStatus } from '@prisma/client';
 
 /**
@@ -9,7 +9,7 @@ import { ApplicationStatus } from '@prisma/client';
  */
 export async function getApplicationsByJobId(jobId: string, enterpriseId: string) {
   // 验证职位是否属于当前企业
-  const job = await prisma.job.findUnique({
+  const job = await getPrisma().job.findUnique({
     where: { id: jobId },
     select: { enterpriseId: true }
   });
@@ -23,7 +23,7 @@ export async function getApplicationsByJobId(jobId: string, enterpriseId: string
   }
 
   // 获取申请列表，包含关联数据
-  const applications = await prisma.application.findMany({
+  const applications = await getPrisma().application.findMany({
     where: { jobId },
     include: {
       user: {
@@ -71,7 +71,7 @@ export async function updateApplicationStatus(
   status: ApplicationStatus
 ) {
   // 验证申请是否存在且属于当前企业的职位
-  const application = await prisma.application.findUnique({
+  const application = await getPrisma().application.findUnique({
     where: { id: applicationId },
     include: {
       job: {
@@ -89,7 +89,7 @@ export async function updateApplicationStatus(
   }
 
   // 更新申请状态
-  const updatedApplication = await prisma.application.update({
+  const updatedApplication = await getPrisma().application.update({
     where: { id: applicationId },
     data: { status },
     include: {
@@ -132,7 +132,7 @@ export async function updateApplicationStatus(
  */
 export async function getApplicationResume(applicationId: string, enterpriseId: string) {
   // 验证申请是否存在且属于当前企业的职位
-  const application = await prisma.application.findUnique({
+  const application = await getPrisma().application.findUnique({
     where: { id: applicationId },
     include: {
       job: {
@@ -180,7 +180,7 @@ export async function getApplicationResume(applicationId: string, enterpriseId: 
  */
 export async function getApplicationById(applicationId: string, enterpriseId: string) {
   // 验证申请是否存在且属于当前企业的职位
-  const application = await prisma.application.findUnique({
+  const application = await getPrisma().application.findUnique({
     where: { id: applicationId },
     include: {
       job: {

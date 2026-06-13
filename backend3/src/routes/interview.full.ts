@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import axios from 'axios';
 import { authenticateToken, requireUser, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
@@ -23,7 +23,7 @@ router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Re
       where.type = 'ENTERPRISE';
       // 企业面试：求职者只返回基本信息，不暴露面试配置
       const [interviews, total] = await Promise.all([
-        prisma.interview.findMany({
+        getPrisma().interview.findMany({
           where,
           orderBy: { createdAt: 'desc' },
           skip,
@@ -35,7 +35,7 @@ router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Re
             createdAt: true,
           }
         }),
-        prisma.interview.count({ where })
+        getPrisma().interview.count({ where })
       ]);
       return res.json({
         interviews,
@@ -46,14 +46,14 @@ router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Re
     }
 
     const [interviews, total] = await Promise.all([
-      prisma.interview.findMany({
+      getPrisma().interview.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
         include: { resume: { select: { title: true } } }
       }),
-      prisma.interview.count({ where })
+      getPrisma().interview.count({ where })
     ]);
     res.json({
       interviews,
@@ -71,7 +71,7 @@ router.post('/', authenticateToken, requireUser, async (req: AuthRequest, res: R
     const userId = req.user!.userId;
     const { resumeId, title, position, difficulty, language, aiRole } = req.body;
     
-    const interview = await prisma.interview.create({
+    const interview = await getPrisma().interview.create({
       data: {
         userId,
         resumeId,
@@ -98,7 +98,7 @@ router.get('/:id', authenticateToken, requireUser, async (req: AuthRequest, res:
     const userId = req.user!.userId;
     const { id } = req.params;
     
-    const interview = await prisma.interview.findFirst({
+    const interview = await getPrisma().interview.findFirst({
       where: { id, userId },
       include: { resume: true }
     });
@@ -120,7 +120,7 @@ router.post('/:id/start', aiLimiter, authenticateToken, requireUser, async (req:
     const userId = req.user!.userId;
     const { id } = req.params;
     
-    const interview = await prisma.interview.findFirst({
+    const interview = await getPrisma().interview.findFirst({
       where: { id, userId },
       include: { resume: true }
     });
@@ -136,7 +136,7 @@ router.post('/:id/start', aiLimiter, authenticateToken, requireUser, async (req:
       
       // 更新面试状态（保留原始配置到feedback防止丢失）
       const qData = (interview.questions as any) || {};
-      const updatedInterview = await prisma.interview.update({
+      const updatedInterview = await getPrisma().interview.update({
         where: { id },
         data: {
           status: 'IN_PROGRESS',
@@ -261,7 +261,7 @@ ${resumeText.substring(0, 4000)}
     // 企业面试：把原始配置备份到 feedback，因为 questions 会被覆盖为字符串数组
     const feedbackData = isEnterprise && enterpriseConfig ? { interviewConfig: enterpriseConfig } : {};
 
-    const updatedInterview = await prisma.interview.update({
+    const updatedInterview = await getPrisma().interview.update({
       where: { id },
       data: {
         status: 'IN_PROGRESS',
@@ -291,7 +291,7 @@ router.post('/:id/answer', aiLimiter, authenticateToken, requireUser, async (req
     const { id } = req.params;
     const { answer } = req.body;
     
-    const interview = await prisma.interview.findFirst({
+    const interview = await getPrisma().interview.findFirst({
       where: { id, userId }
     });
     
@@ -368,7 +368,7 @@ router.post('/:id/answer', aiLimiter, authenticateToken, requireUser, async (req
         updateData.score = Math.round(totalScore / answers.length);
       }
 
-      const updatedInterview = await prisma.interview.update({
+      const updatedInterview = await getPrisma().interview.update({
         where: { id },
         data: updateData,
       });
@@ -581,7 +581,7 @@ ${answer}
         updateData.score = Math.round(totalScore / answers.length);
       }
 
-      const updatedInterview = await prisma.interview.update({
+      const updatedInterview = await getPrisma().interview.update({
         where: { id },
         data: updateData,
       });
@@ -624,7 +624,7 @@ router.post('/:id/end', authenticateToken, requireUser, async (req: AuthRequest,
     const userId = req.user!.userId;
     const { id } = req.params;
     
-    const interview = await prisma.interview.findFirst({
+    const interview = await getPrisma().interview.findFirst({
       where: { id, userId }
     });
     
@@ -639,7 +639,7 @@ router.post('/:id/end', authenticateToken, requireUser, async (req: AuthRequest,
       totalScore = answers.reduce((sum: number, a: any) => sum + (a.score || 0), 0);
     }
     
-    const updatedInterview = await prisma.interview.update({
+    const updatedInterview = await getPrisma().interview.update({
       where: { id },
       data: {
         status: 'COMPLETED',
@@ -678,7 +678,7 @@ router.post('/:id/report', aiLimiter, authenticateToken, requireUser, async (req
     // 进度：开始
     sendEvent({ type: 'progress', step: 'init', percent: 0, message: '开始生成报告...' });
 
-    const interview = await prisma.interview.findFirst({
+    const interview = await getPrisma().interview.findFirst({
       where: { id, userId },
       include: { resume: true }
     });
@@ -713,7 +713,7 @@ router.post('/:id/report', aiLimiter, authenticateToken, requireUser, async (req
       sendEvent({ type: 'progress', step: 'parsing', percent: 60, message: '解析报告数据...' });
       const mockReport = getMockReport(interview, answers);
       sendEvent({ type: 'progress', step: 'saving', percent: 90, message: '保存报告...' });
-      const updatedInterview = await prisma.interview.update({
+      const updatedInterview = await getPrisma().interview.update({
         where: { id },
         data: { feedback: mockReport }
       });
@@ -901,7 +901,7 @@ ${interviewHistory}
     sendEvent({ type: 'progress', step: 'saving', percent: 90, message: '保存报告...' });
     
     // 更新面试记录，保存报告
-    const updatedInterview = await prisma.interview.update({
+    const updatedInterview = await getPrisma().interview.update({
       where: { id },
       data: {
         feedback: report
@@ -929,7 +929,7 @@ router.post('/:id/ai-evaluate', authenticateToken, async (req: AuthRequest, res:
       return res.status(403).json({ error: '仅企业用户和HR可进行AI评估' });
     }
 
-    const interview = await prisma.interview.findUnique({
+    const interview = await getPrisma().interview.findUnique({
       where: { id },
       include: { resume: true, user: true }
     });
@@ -988,7 +988,7 @@ router.post('/:id/ai-evaluate', authenticateToken, async (req: AuthRequest, res:
       };
 
       // 存入 feedback
-      await prisma.interview.update({
+      await getPrisma().interview.update({
         where: { id },
         data: {
           feedback: {
@@ -1109,7 +1109,7 @@ ${interviewHistory}
     }
 
     // 存入 feedback
-    await prisma.interview.update({
+    await getPrisma().interview.update({
       where: { id },
       data: {
         feedback: {
@@ -1135,7 +1135,7 @@ router.delete('/:id', authenticateToken, requireUser, async (req: AuthRequest, r
     const userId = req.user!.userId;
     const { id } = req.params;
     
-    const interview = await prisma.interview.findFirst({
+    const interview = await getPrisma().interview.findFirst({
       where: { id, userId }
     });
     
@@ -1143,7 +1143,7 @@ router.delete('/:id', authenticateToken, requireUser, async (req: AuthRequest, r
       return res.status(404).json({ error: '面试不存在' });
     }
     
-    await prisma.interview.delete({
+    await getPrisma().interview.delete({
       where: { id }
     });
     

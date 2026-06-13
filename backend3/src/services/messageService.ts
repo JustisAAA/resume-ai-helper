@@ -1,4 +1,4 @@
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { parsePagination, buildPagination } from '../utils/pagination';
 
 /**
@@ -29,8 +29,8 @@ export async function sendMessage(senderId: string, receiverId: string, content:
   }
 
   const [sender, receiver] = await Promise.all([
-    prisma.user.findUnique({ where: { id: senderId }, select: { id: true, role: true } }),
-    prisma.user.findUnique({ where: { id: receiverId }, select: { id: true, role: true } })
+    getPrisma().user.findUnique({ where: { id: senderId }, select: { id: true, role: true } }),
+    getPrisma().user.findUnique({ where: { id: receiverId }, select: { id: true, role: true } })
   ]);
 
   if (!sender) throw new Error('发送者不存在');
@@ -46,7 +46,7 @@ export async function sendMessage(senderId: string, receiverId: string, content:
     throw new Error(`${senderLabel}不能直接与${receiverLabel}通信`);
   }
 
-  const message = await prisma.message.create({
+  const message = await getPrisma().message.create({
     data: {
       senderId,
       receiverId,
@@ -92,14 +92,14 @@ export async function getMessages(
   }
 
   if (after) {
-    const afterMessage = await prisma.message.findUnique({ where: { id: after } });
+    const afterMessage = await getPrisma().message.findUnique({ where: { id: after } });
     if (afterMessage) {
       where.createdAt = { gt: afterMessage.createdAt };
     }
   }
 
   const [messages, total] = await Promise.all([
-    prisma.message.findMany({
+    getPrisma().message.findMany({
       where,
       orderBy: { createdAt: 'asc' },
       skip,
@@ -108,7 +108,7 @@ export async function getMessages(
         sender: { select: { id: true, name: true, avatar: true } }
       }
     }),
-    prisma.message.count({ where })
+    getPrisma().message.count({ where })
   ]);
 
   return {
@@ -121,7 +121,7 @@ export async function getMessages(
  * 获取未读消息数
  */
 export async function getUnreadCount(userId: string) {
-  const count = await prisma.message.count({
+  const count = await getPrisma().message.count({
     where: {
       receiverId: userId,
       isRead: false
@@ -146,7 +146,7 @@ export async function markAsRead(userId: string, partnerId: string, jobId?: stri
     where.jobId = jobId;
   }
 
-  await prisma.message.updateMany({
+  await getPrisma().message.updateMany({
     where,
     data: { isRead: true }
   });
@@ -160,7 +160,7 @@ export async function markAsRead(userId: string, partnerId: string, jobId?: stri
 export async function getConversations(userId: string, role?: string, pagination?: { page?: number; limit?: number }) {
   const { page, limit, skip: start } = parsePagination(pagination);
 
-  const messages = await prisma.message.findMany({
+  const messages = await getPrisma().message.findMany({
     where: {
       OR: [
         { senderId: userId },
@@ -218,14 +218,14 @@ export async function getConversations(userId: string, role?: string, pagination
 
   if (enterprisePartnerIds.length > 0) {
     // 直接查enterprise表获取logo（enterprise role）
-    const enterprises = await prisma.enterprise.findMany({
+    const enterprises = await getPrisma().enterprise.findMany({
       where: { userId: { in: enterprisePartnerIds } },
       select: { userId: true, logo: true }
     });
     const logoMap = new Map(enterprises.map(e => [e.userId, e.logo]));
 
     // 查HR用户的hrAccount获取enterprise logo（HR role）
-    const hrAccounts = await prisma.hRAccount.findMany({
+    const hrAccounts = await getPrisma().hRAccount.findMany({
       where: { userId: { in: enterprisePartnerIds } },
       include: { enterprise: { select: { logo: true } } }
     });

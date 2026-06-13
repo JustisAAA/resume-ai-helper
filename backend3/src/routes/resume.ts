@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -50,7 +50,7 @@ const upload = multer({
 router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const resumes = await prisma.resume.findMany({
+    const resumes = await getPrisma().resume.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' }
     });
@@ -92,7 +92,7 @@ router.post('/upload', authenticateToken, requireUser, upload.single('file'), as
     }
 
     // 创建简历记录
-    const resume = await prisma.resume.create({
+    const resume = await getPrisma().resume.create({
       data: {
         userId,
         title: title || file.originalname,
@@ -128,7 +128,7 @@ router.post('/', authenticateToken, requireUser, async (req: AuthRequest, res: R
       parsedContent = content ? JSON.parse(content) : {};
     } catch { /* 保持空对象 */ }
 
-    const resume = await prisma.resume.create({
+    const resume = await getPrisma().resume.create({
       data: {
         userId,
         title: title || '未命名简历',
@@ -153,7 +153,7 @@ router.get('/:id', authenticateToken, requireUser, async (req: AuthRequest, res:
     const userId = req.user!.userId;
     const { id } = req.params;
     
-    const resume = await prisma.resume.findFirst({
+    const resume = await getPrisma().resume.findFirst({
       where: { id, userId }
     });
     
@@ -176,7 +176,7 @@ router.put('/:id', authenticateToken, requireUser, async (req: AuthRequest, res:
     const { title, content, rawText, fileUrl, fileType, analysis, score, status } = req.body;
     
     // 检查简历是否存在且属于当前用户
-    const existing = await prisma.resume.findFirst({
+    const existing = await getPrisma().resume.findFirst({
       where: { id, userId }
     });
     
@@ -189,7 +189,7 @@ router.put('/:id', authenticateToken, requireUser, async (req: AuthRequest, res:
     try { if (content) parsedContent = JSON.parse(content); } catch {}
     try { if (analysis) parsedAnalysis = JSON.parse(analysis); } catch {}
 
-    const resume = await prisma.resume.update({
+    const resume = await getPrisma().resume.update({
       where: { id },
       data: {
         title,
@@ -217,7 +217,7 @@ router.delete('/:id', authenticateToken, requireUser, async (req: AuthRequest, r
     const { id } = req.params;
     
     // 检查简历是否存在且属于当前用户
-    const existing = await prisma.resume.findFirst({
+    const existing = await getPrisma().resume.findFirst({
       where: { id, userId }
     });
     
@@ -225,7 +225,7 @@ router.delete('/:id', authenticateToken, requireUser, async (req: AuthRequest, r
       return res.status(404).json({ error: '简历不存在' });
     }
     
-    await prisma.resume.delete({
+    await getPrisma().resume.delete({
       where: { id }
     });
     
@@ -243,7 +243,7 @@ router.post('/:id/analyze', authenticateToken, requireUser, async (req: AuthRequ
     const { id } = req.params;
     
     // 检查简历是否存在且属于当前用户
-    const resume = await prisma.resume.findFirst({
+    const resume = await getPrisma().resume.findFirst({
       where: { id, userId }
     });
     
@@ -311,7 +311,7 @@ ${(resume.rawText as string).substring(0, 5000)}
     const result = JSON.parse(jsonStr);
 
     // 更新简历记录
-    const updatedResume = await prisma.resume.update({
+    const updatedResume = await getPrisma().resume.update({
       where: { id },
       data: {
         analysis: {
@@ -347,7 +347,7 @@ router.post('/:id/score', authenticateToken, requireUser, async (req: AuthReques
     const { id } = req.params;
     
     // 检查简历是否存在且属于当前用户
-    const resume = await prisma.resume.findFirst({
+    const resume = await getPrisma().resume.findFirst({
       where: { id, userId }
     });
     
@@ -413,7 +413,7 @@ ${(resume.rawText as string).substring(0, 5000)}
     const scoreResult = JSON.parse(jsonStr);
     
     // 更新简历记录
-    const updatedResume = await prisma.resume.update({
+    const updatedResume = await getPrisma().resume.update({
       where: { id },
       data: {
         score: scoreResult.overall_score || null,
@@ -444,7 +444,7 @@ router.post('/:id/apply-template', authenticateToken, requireUser, async (req: A
       return res.status(400).json({ error: '请提供模板ID' });
     }
 
-    const resume = await prisma.resume.findFirst({
+    const resume = await getPrisma().resume.findFirst({
       where: { id, userId }
     });
 
@@ -497,7 +497,7 @@ router.post('/:id/apply-template', authenticateToken, requireUser, async (req: A
     const htmlMatch = content.match(/```html\n([\s\S]*?)\n```/) || content.match(/<html[\s\S]*<\/html>/i);
     const htmlContent = htmlMatch ? (htmlMatch[1] || htmlMatch[0]) : content;
 
-    const updatedResume = await prisma.resume.update({
+    const updatedResume = await getPrisma().resume.update({
       where: { id },
       data: {
         content: { templateId, html: htmlContent },

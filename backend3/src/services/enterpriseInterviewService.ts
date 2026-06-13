@@ -1,4 +1,4 @@
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { InterviewStatus, Difficulty, Language, AIRole } from '@prisma/client';
 
 /**
@@ -9,7 +9,7 @@ import { InterviewStatus, Difficulty, Language, AIRole } from '@prisma/client';
  */
 export async function createInterview(enterpriseId: string, applicationId: string) {
   // 验证申请是否存在且属于当前企业的职位
-  const application = await prisma.application.findUnique({
+  const application = await getPrisma().application.findUnique({
     where: { id: applicationId },
     include: {
       job: {
@@ -37,7 +37,7 @@ export async function createInterview(enterpriseId: string, applicationId: strin
   }
 
   // 创建面试
-  const interview = await prisma.interview.create({
+  const interview = await getPrisma().interview.create({
     data: {
       userId: application.user.id,
       resumeId: application.resume.id,
@@ -64,7 +64,7 @@ export async function getEnterpriseInterviews(enterpriseId: string, jobId?: stri
   const whereJob: any = { enterpriseId };
   if (jobId) whereJob.id = jobId;
 
-  const jobs = await prisma.job.findMany({
+  const jobs = await getPrisma().job.findMany({
     where: whereJob,
     select: { id: true }
   });
@@ -72,7 +72,7 @@ export async function getEnterpriseInterviews(enterpriseId: string, jobId?: stri
   const jobIds = jobs.map(j => j.id);
 
   // 获取这些职位的所有申请对应的用户ID
-  const applications = await prisma.application.findMany({
+  const applications = await getPrisma().application.findMany({
     where: { jobId: { in: jobIds } },
     select: { userId: true }
   });
@@ -80,7 +80,7 @@ export async function getEnterpriseInterviews(enterpriseId: string, jobId?: stri
   const userIds = [...new Set(applications.map(a => a.userId))];
 
   // 获取这些用户的面试
-  const interviews = await prisma.interview.findMany({
+  const interviews = await getPrisma().interview.findMany({
     where: { userId: { in: userIds } },
     include: {
       user: {
@@ -107,7 +107,7 @@ export async function getEnterpriseInterviews(enterpriseId: string, jobId?: stri
  */
 export async function getInterviewReport(interviewId: string, enterpriseId: string) {
   // 获取面试及报告
-  const interview = await prisma.interview.findUnique({
+  const interview = await getPrisma().interview.findUnique({
     where: { id: interviewId },
     include: {
       report: true,
@@ -129,7 +129,7 @@ export async function getInterviewReport(interviewId: string, enterpriseId: stri
   }
 
   // 验证企业权限：面试的用户必须是该企业职位申请的候选人
-  const applications = await prisma.application.findFirst({
+  const applications = await getPrisma().application.findFirst({
     where: {
       userId: interview.userId,
       job: {

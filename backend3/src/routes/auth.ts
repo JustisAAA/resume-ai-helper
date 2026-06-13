@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -45,7 +45,7 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
     }
 
     // 检查用户是否存在
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await getPrisma().user.findUnique({
       where: { email }
     });
 
@@ -57,7 +57,7 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
     const passwordHash = await bcrypt.hash(password, 10);
 
     // 创建用户
-    const user = await prisma.user.create({
+    const user = await getPrisma().user.create({
       data: {
         email,
         passwordHash,
@@ -100,7 +100,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
     }
 
     // 查找用户
-    const user = await prisma.user.findUnique({
+    const user = await getPrisma().user.findUnique({
       where: { email }
     });
 
@@ -142,7 +142,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
 // 获取当前用户信息
 router.get('/me', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await getPrisma().user.findUnique({
       where: { id: req.user!.userId },
       select: { id: true, email: true, name: true, role: true, createdAt: true, avatar: true }
     });
@@ -163,7 +163,7 @@ router.put('/me', authenticateToken, async (req: AuthRequest, res: Response) => 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: '用户名不能为空' });
     }
-    const user = await prisma.user.update({
+    const user = await getPrisma().user.update({
       where: { id: req.user!.userId },
       data: { name: name.trim() },
       select: { id: true, email: true, name: true, role: true, createdAt: true, avatar: true }
@@ -188,7 +188,7 @@ router.put('/me/password', authenticateToken, async (req: AuthRequest, res: Resp
     if (!/[a-z]/.test(newPassword) || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       return res.status(400).json({ error: '新密码必须包含大小写字母和数字' });
     }
-    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    const user = await getPrisma().user.findUnique({ where: { id: req.user!.userId } });
     if (!user) {
       return res.status(401).json({ error: '用户不存在' });
     }
@@ -197,7 +197,7 @@ router.put('/me/password', authenticateToken, async (req: AuthRequest, res: Resp
       return res.status(400).json({ error: '旧密码错误' });
     }
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({
+    await getPrisma().user.update({
       where: { id: req.user!.userId },
       data: { passwordHash: newPasswordHash }
     });
@@ -215,7 +215,7 @@ router.post('/me/avatar', authenticateToken, uploadAvatar.single('avatar'), asyn
       return res.status(400).json({ error: '未上传文件' });
     }
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    const user = await prisma.user.update({
+    const user = await getPrisma().user.update({
       where: { id: req.user!.userId },
       data: { avatar: avatarUrl },
       select: { id: true, email: true, name: true, role: true, createdAt: true, avatar: true }

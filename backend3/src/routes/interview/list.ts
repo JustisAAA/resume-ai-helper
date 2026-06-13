@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { prisma } from '../../index';
+import { getPrisma } from '../../index';
 import { authenticateToken, requireUser, AuthRequest } from '../../middleware/auth';
 import { sanitizeError } from '../../utils/sanitize';
 
@@ -18,14 +18,14 @@ router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Re
     if (typeFilter === 'ENTERPRISE') {
       where.type = 'ENTERPRISE';
       const [interviews, total] = await Promise.all([
-        prisma.interview.findMany({
+        getPrisma().interview.findMany({
           where,
           orderBy: { createdAt: 'desc' },
           skip,
           take: limit,
           select: { id: true, status: true, type: true, createdAt: true }
         }),
-        prisma.interview.count({ where })
+        getPrisma().interview.count({ where })
       ]);
       return res.json({ interviews, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     } else if (typeFilter === 'PRACTICE') {
@@ -33,14 +33,14 @@ router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Re
     }
 
     const [interviews, total] = await Promise.all([
-      prisma.interview.findMany({
+      getPrisma().interview.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
         include: { resume: { select: { title: true } } }
       }),
-      prisma.interview.count({ where })
+      getPrisma().interview.count({ where })
     ]);
     res.json({ interviews, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
@@ -53,7 +53,7 @@ router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Re
 router.get('/:id', authenticateToken, requireUser, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const interview = await prisma.interview.findFirst({
+    const interview = await getPrisma().interview.findFirst({
       where: { id: req.params.id, userId }
     });
     if (!interview) {

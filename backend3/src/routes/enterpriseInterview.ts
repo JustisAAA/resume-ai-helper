@@ -27,8 +27,8 @@ router.post('/', authenticateToken, requireEnterprise, async (req: Request, res:
     }
 
     // 获取企业ID
-    const { prisma } = require('../index');
-    const enterprise = await prisma.enterprise.findUnique({
+    const { getPrisma } = require('../index');
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 
@@ -76,13 +76,13 @@ router.get('/', authenticateToken, requireEnterpriseOrHR, async (req: Request, r
   try {
     const userId = (req as any).user.userId;
     const userRole = (req as any).user.role;
-    const { prisma } = require('../index');
+    const { getPrisma } = require('../index');
 
     let enterpriseId: string;
 
     if (userRole === 'HR') {
       // HR用户：通过HRAccount找到绑定的岗位和企业
-      const hrAccount = await prisma.hRAccount.findUnique({
+      const hrAccount = await getPrisma().hRAccount.findUnique({
         where: { userId },
         select: { enterpriseId: true, jobId: true }
       });
@@ -96,7 +96,7 @@ router.get('/', authenticateToken, requireEnterpriseOrHR, async (req: Request, r
     }
 
     // 企业用户
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
     if (!enterprise) {
@@ -121,12 +121,12 @@ router.get('/:id/report', authenticateToken, requireEnterpriseOrHR, async (req: 
     const userId = (req as any).user.userId;
     const userRole = (req as any).user.role;
     const { id } = req.params;
-    const { prisma } = require('../index');
+    const { getPrisma } = require('../index');
 
     let enterpriseId: string;
 
     if (userRole === 'HR') {
-      const hrAccount = await prisma.hRAccount.findUnique({
+      const hrAccount = await getPrisma().hRAccount.findUnique({
         where: { userId },
         select: { enterpriseId: true }
       });
@@ -135,7 +135,7 @@ router.get('/:id/report', authenticateToken, requireEnterpriseOrHR, async (req: 
       }
       enterpriseId = hrAccount.enterpriseId;
     } else {
-      const enterprise = await prisma.enterprise.findUnique({
+      const enterprise = await getPrisma().enterprise.findUnique({
         where: { userId }
       });
       if (!enterprise) {

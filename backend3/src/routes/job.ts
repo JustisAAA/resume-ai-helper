@@ -3,7 +3,7 @@ import { createJob, getJobs, getJobById, updateJob, deleteJob, updateJobStatus }
 import { authenticateToken, requireEnterprise, AuthRequest } from '../middleware/auth';
 import { JobStatus } from '@prisma/client';
 import { getApplicationsByJobId } from '../services/applicationService';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { sanitizeError } from '../utils/sanitize';
 
 const router = Router();
@@ -14,7 +14,7 @@ router.post('/', authenticateToken, requireEnterprise, async (req: AuthRequest, 
     const userId = req.user!.userId;
 
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 
@@ -102,7 +102,7 @@ router.put('/:id', authenticateToken, requireEnterprise, async (req: AuthRequest
     const { id } = req.params;
     
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 
@@ -138,7 +138,7 @@ router.delete('/:id', authenticateToken, requireEnterprise, async (req: AuthRequ
     const { id } = req.params;
     
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 
@@ -162,7 +162,7 @@ router.patch('/:id/status', authenticateToken, requireEnterprise, async (req: Au
     const { status } = req.body;
     
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 
@@ -192,7 +192,7 @@ router.get('/:jobId/applications', authenticateToken, requireEnterprise, async (
     const { jobId } = req.params;
 
     // 获取企业ID
-    const enterprise = await prisma.enterprise.findUnique({
+    const enterprise = await getPrisma().enterprise.findUnique({
       where: { userId }
     });
 

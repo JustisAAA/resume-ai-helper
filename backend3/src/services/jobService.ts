@@ -1,4 +1,4 @@
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { JobStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { parsePagination, buildPagination } from '../utils/pagination';
@@ -45,13 +45,13 @@ export async function createJob(enterpriseId: string, data: JobCreateData) {
   if (hrConfig.password.length < 6) {
     throw new Error('HR密码至少6位');
   }
-  const emailTaken = await prisma.user.findUnique({ where: { email: hrConfig.email } });
+  const emailTaken = await getPrisma().user.findUnique({ where: { email: hrConfig.email } });
   if (emailTaken) throw new Error(`HR邮箱 ${hrConfig.email} 已被占用`);
 
   const hashedPw = bcrypt.hashSync(hrConfig.password, BCRYPT_SALT_ROUNDS);
 
   // 使用事务：创建职位 + HR用户 + HR账号，全部成功或全部回滚
-  const { job, hrAccount } = await prisma.$transaction(async (tx) => {
+  const { job, hrAccount } = await getPrisma().$transaction(async (tx) => {
     const newJob = await tx.job.create({
       data: {
         enterpriseId,
@@ -129,7 +129,7 @@ export async function getJobs(
   }
 
   const [jobs, total] = await Promise.all([
-    prisma.job.findMany({
+    getPrisma().job.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip,
@@ -156,7 +156,7 @@ export async function getJobs(
         }
       }
     }),
-    prisma.job.count({ where })
+    getPrisma().job.count({ where })
   ]);
 
   return {
@@ -169,7 +169,7 @@ export async function getJobs(
  * 获取职位详情
  */
 export async function getJobById(jobId: string) {
-  const job = await prisma.job.findUnique({
+  const job = await getPrisma().job.findUnique({
     where: { id: jobId },
     include: {
       enterprise: {
@@ -227,7 +227,7 @@ export async function getJobById(jobId: string) {
  */
 export async function updateJob(jobId: string, enterpriseId: string, data: JobUpdateData) {
   // 检查职位是否存在且属于该企业
-  const job = await prisma.job.findUnique({
+  const job = await getPrisma().job.findUnique({
     where: { id: jobId }
   });
 
@@ -240,7 +240,7 @@ export async function updateJob(jobId: string, enterpriseId: string, data: JobUp
   }
 
   // 更新职位
-  const updatedJob = await prisma.job.update({
+  const updatedJob = await getPrisma().job.update({
     where: { id: jobId },
     data,
     include: {
@@ -262,7 +262,7 @@ export async function updateJob(jobId: string, enterpriseId: string, data: JobUp
  */
 export async function deleteJob(jobId: string, enterpriseId: string) {
   // 检查职位是否存在且属于该企业
-  const job = await prisma.job.findUnique({
+  const job = await getPrisma().job.findUnique({
     where: { id: jobId }
   });
 
@@ -275,7 +275,7 @@ export async function deleteJob(jobId: string, enterpriseId: string) {
   }
 
   // 软删除：仅标记状态，保留关联数据（面试记录、申请等）
-  await prisma.job.update({
+  await getPrisma().job.update({
     where: { id: jobId },
     data: { status: 'DELETED' }
   });
@@ -288,7 +288,7 @@ export async function deleteJob(jobId: string, enterpriseId: string) {
  */
 export async function updateJobStatus(jobId: string, enterpriseId: string, status: JobStatus) {
   // 检查职位是否存在且属于该企业
-  const job = await prisma.job.findUnique({
+  const job = await getPrisma().job.findUnique({
     where: { id: jobId }
   });
 
@@ -301,7 +301,7 @@ export async function updateJobStatus(jobId: string, enterpriseId: string, statu
   }
 
   // 更新职位状态
-  const updatedJob = await prisma.job.update({
+  const updatedJob = await getPrisma().job.update({
     where: { id: jobId },
     data: { status },
     include: {

@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import { JWT_SECRET, JWT_EXPIRES_IN, BCRYPT_SALT_ROUNDS } from '../config';
 
 export interface EnterpriseRegisterData {
@@ -50,7 +50,7 @@ export async function registerEnterprise(data: EnterpriseRegisterData) {
   }
 
   // 检查用户是否已存在
-  const existingUser = await prisma.user.findUnique({
+  const existingUser = await getPrisma().user.findUnique({
     where: { email }
   });
 
@@ -62,7 +62,7 @@ export async function registerEnterprise(data: EnterpriseRegisterData) {
   const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
   // 创建用户和企业（事务保护）
-  const { user, enterprise } = await prisma.$transaction(async (tx) => {
+  const { user, enterprise } = await getPrisma().$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         email,
@@ -134,7 +134,7 @@ export async function loginEnterprise(data: EnterpriseLoginData) {
   }
 
   // 查找用户
-  const user = await prisma.user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: { email }
   });
 
@@ -155,7 +155,7 @@ export async function loginEnterprise(data: EnterpriseLoginData) {
   }
 
   // 获取企业信息
-  const enterprise = await prisma.enterprise.findUnique({
+  const enterprise = await getPrisma().enterprise.findUnique({
     where: { userId: user.id }
   });
 
@@ -198,7 +198,7 @@ export async function loginEnterprise(data: EnterpriseLoginData) {
  * 获取企业资料
  */
 export async function getEnterpriseProfile(userId: string) {
-  const enterprise = await prisma.enterprise.findUnique({
+  const enterprise = await getPrisma().enterprise.findUnique({
     where: { userId }
   });
 
@@ -213,7 +213,7 @@ export async function getEnterpriseProfile(userId: string) {
  * 更新企业资料
  */
 export async function updateEnterpriseProfile(userId: string, data: EnterpriseUpdateData) {
-  const enterprise = await prisma.enterprise.findUnique({
+  const enterprise = await getPrisma().enterprise.findUnique({
     where: { userId }
   });
 
@@ -221,7 +221,7 @@ export async function updateEnterpriseProfile(userId: string, data: EnterpriseUp
     throw new Error('企业信息不存在');
   }
 
-  const updatedEnterprise = await prisma.enterprise.update({
+  const updatedEnterprise = await getPrisma().enterprise.update({
     where: { userId },
     data
   });
@@ -235,7 +235,7 @@ export async function updateEnterpriseProfile(userId: string, data: EnterpriseUp
  */
 export async function getDashboardStats(enterpriseId: string) {
   // 1. 招聘漏斗：职位数、申请数、面试数、录用数
-  const jobs = await prisma.job.findMany({
+  const jobs = await getPrisma().job.findMany({
     where: { enterpriseId },
     include: { applications: true }
   });
@@ -246,14 +246,14 @@ export async function getDashboardStats(enterpriseId: string) {
   const totalApplications = jobs.reduce((sum, j) => sum + j.applications.length, 0);
   
   // 面试数：该企业下创建的面试总数
-  const interviewsCount = await prisma.interview.count({
+  const interviewsCount = await getPrisma().interview.count({
     where: { 
       application: { jobId: { in: jobIds } }
     }
   });
   
   // 录用数：status = 'ACCEPTED'的申请数
-  const hiredCount = await prisma.application.count({
+  const hiredCount = await getPrisma().application.count({
     where: { 
       jobId: { in: jobIds },
       status: 'ACCEPTED'
@@ -264,7 +264,7 @@ export async function getDashboardStats(enterpriseId: string) {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   
-  const recentApplications = await prisma.application.findMany({
+  const recentApplications = await getPrisma().application.findMany({
     where: {
       jobId: { in: jobIds },
       createdAt: { gte: sevenDaysAgo }

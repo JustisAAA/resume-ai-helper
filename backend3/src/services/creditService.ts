@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import { prisma } from '../index';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { getPrisma } from '../index';
 
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 /**
  * 扣除信用分（举报成立时调用）
@@ -19,7 +19,7 @@ export async function deductCreditScore(
   complaintId?: string,
   tx?: TransactionClient
 ) {
-  const db = tx || prisma;
+  const db = tx || getPrisma();
 
   // 1. 获取用户当前信用分
   const user = await db.user.findUnique({
@@ -57,7 +57,7 @@ export async function deductCreditScore(
     await doUpdate(tx);
   } else {
     // 独立调用，自行开启事务
-    await prisma.$transaction(async (t) => {
+    await getPrisma().$transaction(async (t) => {
       await doUpdate(t);
     });
   }
@@ -69,7 +69,7 @@ export async function deductCreditScore(
  * 获取用户信用分信息（含记录）
  */
 export async function getCreditInfo(userId: string) {
-  const user = await prisma.user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -79,7 +79,7 @@ export async function getCreditInfo(userId: string) {
   });
   if (!user) throw new Error('用户不存在');
 
-  const records = await prisma.creditRecord.findMany({
+  const records = await getPrisma().creditRecord.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
     take: 20
@@ -102,7 +102,7 @@ export async function getCreditInfo(userId: string) {
  * 获取他人的信用分（公开接口，仅分数不含记录）
  */
 export async function getUserCreditScore(userId: string) {
-  const user = await prisma.user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: { id: userId },
     select: {
       id: true,

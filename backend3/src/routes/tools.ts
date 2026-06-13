@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../index';
+import { getPrisma } from '../index';
 import axios from 'axios';
 import { authenticateToken, requireUser, AuthRequest } from '../middleware/auth';
 import multer from 'multer';
