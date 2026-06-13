@@ -109,6 +109,57 @@ router.get('/:id/resume', authenticateToken, requireEnterprise, async (req: Requ
 });
 
 /**
+ * 获取当前用户的申请列表（求职者端）
+ * GET /api/applications/me
+ * 
+ * 权限：已登录用户，查看自己的申请
+ */
+router.get('/me', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [applications, total] = await Promise.all([
+      getPrisma().application.findMany({
+        where: { userId },
+        include: {
+          job: {
+            include: {
+              enterprise: {
+                select: { id: true, name: true }
+              }
+            }
+          },
+          resume: {
+            select: { id: true, title: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      getPrisma().application.count({ where: { userId } })
+    ]);
+
+    res.json({
+      message: '获取申请列表成功',
+      applications,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error: any) {
+    console.error('获取申请列表错误:', error);
+    res.status(500).json({ error: error.message || '获取申请列表失败' });
+  }
+});
+
+/**
  * 获取申请详情
  * GET /api/applications/:id
  * 
