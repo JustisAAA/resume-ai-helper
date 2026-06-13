@@ -9,6 +9,8 @@ node_modules/
 .env.*.local
 /backend/.env
 /backend/.env.local
+/backend3/.env
+/backend3/.env.local
 
 # ===== 构建输出 =====
 dist/
