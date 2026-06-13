@@ -58,3 +58,7 @@ coverage/
 # ===== 临时测试文件 =====
 *.backup
 /backend/prisma/dev.db.backup
+
+# ===== 开发文档（不上传）=====
+backend/
+docs/
