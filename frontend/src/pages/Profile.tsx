@@ -202,7 +202,7 @@ const [user, setUser] = useState<UserProfile | null>(null)
               <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden ring-4 ring-white dark:ring-gray-900">
                 {user?.avatar ? (
                   <img
-                    src={`${getImageUrl(user.avatar)}?t=${Date.now()}`}
+                    src={user.avatar?.startsWith('data:') ? user.avatar : `${getImageUrl(user.avatar)}?t=${Date.now()}`}
                     alt=""
                     className="w-24 h-24 rounded-full object-cover"
                     key={user.avatar}
