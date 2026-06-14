@@ -105,23 +105,25 @@ const EnterpriseInterviewReport: React.FC = () => {
       }
     } catch (err: any) {
       const errMsg = err.response?.data?.error || err.message || '';
-      // 如果是因为没有报告/尚未AI评估，尝试加载面试基本情况
+      // 后端返回"该面试没有报告"时，显示"开始AI评估"按钮
       if (errMsg.includes('没有报告')) {
+        // 尝试加载面试基本信息（用于按钮上方展示面试信息）
         try {
-          const token = localStorage.getItem('token');
+          const token = isHrView
+            ? localStorage.getItem('hrToken')
+            : localStorage.getItem('token');
           const res = await fetch(`${getApiBaseUrl()}/api/interviews/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const interviewData = await res.json();
           if (res.ok) {
             setInterview(interviewData);
-            setError(''); // 清除错误，显示"开始AI评估"按钮
-          } else {
-            setError(errMsg);
           }
         } catch {
-          setError(errMsg);
+          // 面试基本信息加载失败也没关系，按钮仍可正常工作
         }
+        // 不管第二次 fetch 成功与否，都清除错误，显示"开始AI评估"按钮
+        setError('');
       } else {
         setError(errMsg);
       }
