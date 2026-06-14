@@ -379,11 +379,10 @@ export default function InterviewRoom() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // 计算进度：基于 interview.questions.length 作为总题数基准（数据库存储的题数为准）
+  // 计算进度：基于 chatHistory 中的面试官消息数作为总题数
+  // 每生成一个新问题（包括当前显示的），totalQuestions 就 +1
   const answeredCount = chatHistory.filter(m => m.role === 'candidate').length
-  // 注意：AI 可能会动态生成追问，但数据库中的 questions 长度在面试过程中会递增
-  // 为避免分母随追问而增大，优先使用 interview.questions.length
-  const totalQuestions = interview?.questions?.length || (answeredCount + (currentQuestion && !interviewEnded ? 1 : 0))
+  const totalQuestions = Math.max(chatHistory.filter(m => m.role === 'interviewer').length, 1)
   const progressPercent = totalQuestions > 0 ? Math.min(Math.round((answeredCount / totalQuestions) * 100), 100) : 0
 
   // 实时提示：根据当前问题生成上下文相关提示
