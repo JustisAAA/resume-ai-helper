@@ -1,7 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
-import { getApiBaseUrl } from '../utils/api'
 import { getImageUrl } from '../utils/image'
 import { BoltIcon, BuildingOfficeIcon, ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, PlayCircleIcon } from '@heroicons/react/24/outline'
 

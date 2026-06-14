@@ -2,7 +2,6 @@
 import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import { interviewAPI, resumeAPI, UserProfile, Interview } from '../services/api'
-import { getApiBaseUrl } from '../utils/api'
 import { getImageUrl } from '../utils/image'
 import ErrorAlert from '../components/ErrorAlert'
 
