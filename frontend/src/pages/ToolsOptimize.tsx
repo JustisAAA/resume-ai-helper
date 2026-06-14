@@ -513,8 +513,8 @@ export default function ToolsOptimize() {
                           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
                       }`}
                     >
-                      <div className={`text-sm font-bold ${mode === opt.value ? 'text-amber-700' : 'text-gray-900'}`}>{opt.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{opt.desc}</div>
+                      <div className={`text-sm font-bold ${mode === opt.value ? 'text-amber-700 dark:text-amber-400' : 'text-gray-900 dark:text-gray-100'}`}>{opt.label}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</div>
                     </div>
                   ))}
                 </div>

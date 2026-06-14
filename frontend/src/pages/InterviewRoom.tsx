@@ -18,10 +18,11 @@ export default function InterviewRoom() {
   const [currentQuestion, setCurrentQuestion] = useState('')
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AnswerFormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<AnswerFormData>({
     resolver: zodResolver(answerSchema),
     defaultValues: { answer: '' },
   })
+  const watchedAnswer = watch('answer')
   // Synchronize answer state with react-hook-form
   useEffect(() => {
     setValue('answer', answer)
@@ -826,7 +827,7 @@ export default function InterviewRoom() {
               </div>
               <button
                 type="submit"
-                disabled={!answer.trim() || submitting}
+                disabled={!watchedAnswer?.trim() || submitting}
                 onClick={() => handleSubmit(onSubmitAnswer)()}
                 className="px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl font-medium hover:from-brand-700 hover:to-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center gap-2"
               >

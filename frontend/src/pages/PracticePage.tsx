@@ -3,6 +3,7 @@ import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import { interviewAPI, resumeAPI, UserProfile, Interview } from '../services/api'
 import { getApiBaseUrl } from '../utils/api'
+import { getImageUrl } from '../utils/image'
 import ErrorAlert from '../components/ErrorAlert'
 
 /* ── 图标组件 ── */
@@ -258,7 +259,7 @@ export default function PracticePage() {
             <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">{user?.name || user?.email}</span>
             <button onClick={() => navigate('/profile')} className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-100 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/30 flex items-center justify-center text-sm font-bold text-brand-600 dark:text-brand-400 border border-brand-200/50 dark:border-brand-800/50 hover:shadow-md transition-all cursor-pointer overflow-hidden">
               {user?.avatar ? (
-                <img src={user.avatar.startsWith('http') ? user.avatar : `${getApiBaseUrl()}${user.avatar}`} alt="" className="w-8 h-8 rounded-full object-cover" />
+                <img src={getImageUrl(user.avatar)} alt="" className="w-8 h-8 rounded-full object-cover" />
               ) : (
                 (user?.name || user?.email || '?')[0].toUpperCase()
               )}
