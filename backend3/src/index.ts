@@ -71,14 +71,13 @@ export function createApp(): Express {
     fs.mkdirSync(uploadPath, { recursive: true });
   }
 
-  // 公开资源：职位图片 / 头像 / Logo
+  // 公开资源：职位图片 / 头像 / Logo（确保目录存在，避免首次部署时静态服务未注册）
   ['jobs', 'avatars', 'logos'].forEach(dir => {
     const p = path.join(uploadPath, dir);
-    if (fs.existsSync(p)) {
-      app.use(`/uploads/${dir}`, express.static(p, {
-        maxAge: isProduction ? '30d' : '7d', etag: true,
-      }));
-    }
+    if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+    app.use(`/uploads/${dir}`, express.static(p, {
+      maxAge: isProduction ? '30d' : '7d', etag: true,
+    }));
   });
   // 简历文件（需认证）
   const resumesPath = path.join(uploadPath, 'resumes');
