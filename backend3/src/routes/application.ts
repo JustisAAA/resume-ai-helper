@@ -8,7 +8,7 @@ import {
   getApplicationResume,
   getApplicationById
 } from '../services/applicationService';
-import { authenticateToken, requireEnterprise } from '../middleware/auth';
+import { authenticateToken, requireEnterprise, AuthRequest } from '../middleware/auth';
 import { ApplicationStatus } from '@prisma/client';
 import { getPrisma } from '../index';
 import { sanitizeError } from '../utils/sanitize';
@@ -44,9 +44,9 @@ const appUpload = multer({ storage: appStorage, fileFilter: (req, file, cb) => {
  * 
  * 权限：已登录用户（求职者）
  */
-router.post('/', authenticateToken, appUpload.single('resume'), async (req: Request, res: Response) => {
+router.post('/', authenticateToken, appUpload.single('resume'), async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { jobId, coverLetter, resumeId: existingResumeId } = req.body;
     const file = req.file;
 
@@ -125,9 +125,9 @@ router.post('/', authenticateToken, appUpload.single('resume'), async (req: Requ
  * 
  * 权限：企业用户，只能修改自己职位收到的申请
  */
-router.patch('/:id/status', authenticateToken, requireEnterprise, async (req: Request, res: Response) => {
+router.patch('/:id/status', authenticateToken, requireEnterprise, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
     const { status } = req.body;
 
@@ -179,9 +179,9 @@ router.patch('/:id/status', authenticateToken, requireEnterprise, async (req: Re
  * 
  * 权限：企业用户，只能查看自己职位收到的申请的简历
  */
-router.get('/:id/resume', authenticateToken, requireEnterprise, async (req: Request, res: Response) => {
+router.get('/:id/resume', authenticateToken, requireEnterprise, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
 
     // 获取企业ID
@@ -220,9 +220,9 @@ router.get('/:id/resume', authenticateToken, requireEnterprise, async (req: Requ
  * 
  * 权限：已登录用户，查看自己的申请
  */
-router.get('/me', authenticateToken, async (req: Request, res: Response) => {
+router.get('/me', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
@@ -271,9 +271,9 @@ router.get('/me', authenticateToken, async (req: Request, res: Response) => {
  * 
  * 权限：企业用户，只能查看自己职位收到的申请
  */
-router.get('/:id', authenticateToken, requireEnterprise, async (req: Request, res: Response) => {
+router.get('/:id', authenticateToken, requireEnterprise, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
 
     // 获取企业ID

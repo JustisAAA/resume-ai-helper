@@ -183,12 +183,11 @@ export interface ResumeDetail {
 }
 
 export interface ScoringConfig {
-  criteria: Array<{
-    name: string;
-    weight: number;
-    description?: string;
-  }>;
-  maxScore?: number;
+  scoringPoints: string[];
+  keyPoints: string;
+  criteria: string;
+  passScore: number;
+  excellentScore: number;
 }
 
 export interface AIAnalysis {
@@ -861,9 +860,9 @@ export const enterpriseAPI = {
    * 获取Dashboard统计数据
    */
   async getDashboardStats(): Promise<{
-    funnel: { applied: number; screened: number; interviewed: number; hired: number };
+    funnel: { jobs: number; applications: number; interviews: number; hired: number };
     applicationTrend: { date: string; count: number }[];
-    jobPopularity: { jobId: string; title: string; count: number }[];
+    jobPopularity: { jobTitle: string; applications: number }[];
   }> {
     const token = localStorage.getItem('token');
     const res = await axios.get(getApiUrl('/enterprise/dashboard/stats'), {
@@ -923,7 +922,7 @@ export const enterpriseAPI = {
    */
   async aiAnalyze(applicationId: string, scoringConfig: ScoringConfig): Promise<{ message: string; analysis: AIAnalysis }> {
     const token = localStorage.getItem('token');
-    const res = await axios.post(getApiUrl(`/applications/${applicationId}/ai-analyze`), { scoringConfig }, {
+    const res = await axios.post(getApiUrl(`/hr/applications/${applicationId}/ai-analyze`), { scoringConfig }, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.data;

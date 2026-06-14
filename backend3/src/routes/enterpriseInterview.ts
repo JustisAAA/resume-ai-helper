@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { createInterview, getEnterpriseInterviews, getInterviewReport } from '../services/enterpriseInterviewService';
-import { authenticateToken, requireEnterprise, requireEnterpriseOrHR } from '../middleware/auth';
+import { authenticateToken, requireEnterprise, requireEnterpriseOrHR, AuthRequest } from '../middleware/auth';
 import { sanitizeError } from '../utils/sanitize';
+import { getPrisma } from '../index';
 
 const router = Router();
 
@@ -12,11 +13,12 @@ const router = Router();
  * 请求体：
  * - applicationId: 申请ID
  * 
- * 权限：企业用户，只能为属于自己职位的申请创建面试
+ * 权限：企业用户或HR，只能为属于自己职位的申请创建面试
  */
-router.post('/', authenticateToken, requireEnterprise, async (req: Request, res: Response) => {
+router.post('/', authenticateToken, requireEnterpriseOrHR, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
     const { applicationId } = req.body;
 
     // 参数校验
@@ -27,21 +29,32 @@ router.post('/', authenticateToken, requireEnterprise, async (req: Request, res:
       });
     }
 
-    // 获取企业ID
-    const { getPrisma } = require('../index');
-    const enterprise = await getPrisma().enterprise.findUnique({
-      where: { userId }
-    });
-
-    if (!enterprise) {
-      return res.status(404).json({ error: '企业信息不存在' });
+    // 根据角色获取企业ID
+    let enterpriseId: string;
+    if (userRole === 'HR') {
+      const hrAccount = await getPrisma().hRAccount.findUnique({
+        where: { userId },
+        select: { enterpriseId: true, jobId: true }
+      });
+      if (!hrAccount) {
+        return res.status(404).json({ error: 'HR信息不存在' });
+      }
+      enterpriseId = hrAccount.enterpriseId;
+    } else {
+      const enterprise = await getPrisma().enterprise.findUnique({
+        where: { userId }
+      });
+      if (!enterprise) {
+        return res.status(404).json({ error: '企业信息不存在' });
+      }
+      enterpriseId = enterprise.id;
     }
 
     // 创建面试
-    const interview = await createInterview(enterprise.id, applicationId);
+    const interview = await createInterview(enterpriseId, applicationId);
 
-    // 生成面试链接
-    const interviewLink = `${req.protocol}://${req.get('host')}/interview/${interview.id}`;
+    // 生成面试链接（前端路由：/interviews/:id/enterprise-room）
+    const interviewLink = `${req.protocol}://${req.get('host')}/interviews/${interview.id}/enterprise-room`;
 
     res.status(201).json({
       message: '面试邀请创建成功',
@@ -73,11 +86,10 @@ router.post('/', authenticateToken, requireEnterprise, async (req: Request, res:
  * 
  * 权限：企业或HR，企业看全部，HR看关联岗位
  */
-router.get('/', authenticateToken, requireEnterpriseOrHR, async (req: Request, res: Response) => {
+router.get('/', authenticateToken, requireEnterpriseOrHR, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
-    const userRole = (req as any).user.role;
-    const { getPrisma } = require('../index');
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
 
     let enterpriseId: string;
 
@@ -117,12 +129,11 @@ router.get('/', authenticateToken, requireEnterpriseOrHR, async (req: Request, r
  * 
  * 权限：企业或HR
  */
-router.get('/:id/report', authenticateToken, requireEnterpriseOrHR, async (req: Request, res: Response) => {
+router.get('/:id/report', authenticateToken, requireEnterpriseOrHR, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
-    const userRole = (req as any).user.role;
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
     const { id } = req.params;
-    const { getPrisma } = require('../index');
 
     let enterpriseId: string;
 

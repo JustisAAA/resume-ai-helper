@@ -2,8 +2,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// 确保上传目录存在
-const uploadDir = 'uploads/jobs';
+// 确保上传目录存在（使用绝对路径，避免工作目录变化导致的文件位置错误）
+const uploadDir = path.resolve(process.cwd(), 'uploads/jobs');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -36,7 +36,7 @@ export const uploadJobImage = multer({
 export const uploadResumeFile = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      const dir = 'uploads/resumes';
+      const dir = path.resolve(process.cwd(), 'uploads/resumes');
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
@@ -59,7 +59,7 @@ export const uploadResumeFile = multer({
 }).single('resume');
 
 // 企业Logo上传
-const logoDir = 'uploads/logos';
+const logoDir = path.resolve(process.cwd(), 'uploads/logos');
 if (!fs.existsSync(logoDir)) {
   fs.mkdirSync(logoDir, { recursive: true });
 }

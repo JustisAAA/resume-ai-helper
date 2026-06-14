@@ -112,6 +112,7 @@ export default function EnterpriseInterviewRoom() {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const questionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const handleSubmitRef = useRef<() => void>(() => {})
   const initRef = useRef(false)
   const navigate = useNavigate()
 
@@ -165,9 +166,9 @@ export default function EnterpriseInterviewRoom() {
   // 超时自动提交
   useEffect(() => {
     if (questionTimeLeft === 0 && perQuestionTimeLimit > 0 && !aiThinking && !interviewEnded && !showEnding && !submitting) {
-      handleSubmit()
+      handleSubmitRef.current()
     }
-  }, [questionTimeLeft])
+  }, [questionTimeLeft, perQuestionTimeLimit, aiThinking, interviewEnded, showEnding, submitting])
 
   // ========== 语音输入 ==========
   const initRecognition = () => {
@@ -333,6 +334,9 @@ export default function EnterpriseInterviewRoom() {
       },
     })
   }
+
+  // 同步 handleSubmit 到 ref，确保 timeout 闭包始终使用最新版本
+  handleSubmitRef.current = handleSubmit
 
   // Loading
   if (loading) {

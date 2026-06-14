@@ -37,7 +37,8 @@ export async function deductCreditScore(
       where: { id: userId },
       data: {
         creditScore: newScore,
-        isBanned
+        isBanned,
+        status: isBanned ? 'BANNED' : 'ACTIVE'
       }
     });
 

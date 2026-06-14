@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { authenticateToken, requireHR, AuthRequest } from '../middleware/auth';
+import { authenticateToken, requireHR, requireEnterpriseOrHR, AuthRequest } from '../middleware/auth';
 import {
   hrLogin, getHRDashboard, getHRApplications,
   getHRApplicationResume, updateHRApplicationStatus, updateHRProfile,
@@ -62,8 +62,8 @@ router.get('/applications/:id/resume', authenticateToken, requireHR, async (req:
   }
 });
 
-// POST /api/hr/applications/:id/ai-analyze
-router.post('/applications/:id/ai-analyze', authenticateToken, requireHR, async (req: AuthRequest, res: Response) => {
+// POST /api/hr/applications/:id/ai-analyze（企业用户和HR都可访问）
+router.post('/applications/:id/ai-analyze', authenticateToken, requireEnterpriseOrHR, async (req: AuthRequest, res: Response) => {
   try {
     const { scoringConfig } = req.body;
     if (!scoringConfig?.scoringPoints?.length) {

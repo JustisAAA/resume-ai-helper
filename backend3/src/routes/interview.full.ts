@@ -9,90 +9,9 @@ import { isMockMode, getMockFirstQuestion, getMockEvaluation, getMockReport, Ans
 
 const router = Router();
 
-// ========== 获取面试列表（支持 ?type=PRACTICE|ENTERPRISE 过滤） ==========
-router.get('/', authenticateToken, requireUser, async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user!.userId;
-    const typeFilter = req.query.type as string | undefined;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const skip = (page - 1) * limit;
+// ========== 已拆分: GET / 路由 → interview/list.ts, POST / 路由 → interview/create.ts ==========
 
-    const where: any = { userId };
-    if (typeFilter === 'ENTERPRISE') {
-      where.type = 'ENTERPRISE';
-      // 企业面试：求职者只返回基本信息，不暴露面试配置
-      const [interviews, total] = await Promise.all([
-        getPrisma().interview.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
-          select: {
-            id: true,
-            status: true,
-            type: true,
-            createdAt: true,
-          }
-        }),
-        getPrisma().interview.count({ where })
-      ]);
-      return res.json({
-        interviews,
-        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
-      });
-    } else if (typeFilter === 'PRACTICE') {
-      where.type = 'PRACTICE';
-    }
-
-    const [interviews, total] = await Promise.all([
-      getPrisma().interview.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        include: { resume: { select: { title: true } } }
-      }),
-      getPrisma().interview.count({ where })
-    ]);
-    res.json({
-      interviews,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
-    });
-  } catch (error) {
-    console.error('获取面试列表失败:', sanitizeError(error));
-    res.status(500).json({ error: '获取面试列表失败' });
-  }
-});
-
-// 创建面试
-router.post('/', authenticateToken, requireUser, async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user!.userId;
-    const { resumeId, title, position, difficulty, language, aiRole } = req.body;
-    
-    const interview = await getPrisma().interview.create({
-      data: {
-        userId,
-        resumeId,
-        title: title || `${position || '模拟'}面试`,
-        position,
-        difficulty: difficulty || 'MEDIUM',
-        language: language || 'ZH_CN',
-        aiRole: aiRole || 'PROFESSIONAL',
-        questions: [],
-        status: 'CREATED'
-      }
-    });
-    
-    res.status(201).json(interview);
-  } catch (error) {
-    console.error('创建面试失败:', sanitizeError(error));
-    res.status(500).json({ error: '创建面试失败' });
-  }
-});
-
-// 获取单个面试
+// 获取单个面试（含简历信息）
 router.get('/:id', authenticateToken, requireUser, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
