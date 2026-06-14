@@ -58,6 +58,7 @@ export default function ToolsGuide() {
       const token = localStorage.getItem('token')
       const res = await toolsAPI.parseFile(token!, f)
       setParsedResumeText(res.text || '')
+      showToast('文件解析成功，共 ' + (res.text?.length || 0) + ' 字', 'success')
     } catch {
       setGuideError('文件解析失败，请切换"粘贴"模式手动输入')
       setParsedResumeText('')

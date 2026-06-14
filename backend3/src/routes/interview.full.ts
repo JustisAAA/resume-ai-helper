@@ -159,7 +159,8 @@ router.post('/:id/start', aiLimiter, authenticateToken, requireUser, async (req:
     const position = interview.position || '通用岗位';
     const difficulty = interview.difficulty || 'MEDIUM';
     const role = interview.aiRole === 'STRICT' ? '严厉的资深面试官' : interview.aiRole === 'FRIENDLY' ? '友好的面试官' : '专业的面试官';
-    const resumeText = (interview.resume as any)?.content || '暂无简历内容';
+    const rawResume = (interview.resume as any)?.content;
+    const resumeText = (typeof rawResume === 'string' ? rawResume : typeof rawResume === 'object' ? JSON.stringify(rawResume) : '暂无简历内容') || '暂无简历内容';
     
     // 检测是否为企业面试
     const isEnterprise = (interview as any).type === 'ENTERPRISE';

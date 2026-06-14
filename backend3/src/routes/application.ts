@@ -1,5 +1,6 @@
 ﻿import { Router, Request, Response } from 'express';
 import {
+  createApplication,
   updateApplicationStatus,
   getApplicationResume,
   getApplicationById
@@ -9,6 +10,40 @@ import { ApplicationStatus } from '@prisma/client';
 import { getPrisma } from '../index';
 
 const router = Router();
+
+/**
+ * 提交申请
+ * POST /api/applications
+ * 
+ * 请求体：
+ * - jobId: 职位ID
+ * - coverLetter: 求职信
+ * - resumeId: 可选，关联已上传简历
+ * 
+ * 权限：已登录用户（求职者）
+ */
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { jobId, coverLetter, resumeId } = req.body;
+
+    if (!jobId) {
+      return res.status(400).json({ error: '缺少 jobId' });
+    }
+    if (!coverLetter || !coverLetter.trim()) {
+      return res.status(400).json({ error: '求职信不能为空' });
+    }
+
+    const application = await createApplication(userId, jobId, coverLetter.trim(), resumeId);
+    res.status(201).json({ message: '申请提交成功', application });
+  } catch (error: any) {
+    console.error('创建申请错误:', error);
+    if (error.message === '职位不存在' || error.message === '该职位已关闭' || error.message === '你已经申请过该职位') {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message || '提交申请失败' });
+  }
+});
 
 /**
  * 更新申请状态

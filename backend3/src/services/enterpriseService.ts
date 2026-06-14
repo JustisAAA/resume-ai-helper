@@ -116,7 +116,8 @@ export async function registerEnterprise(data: EnterpriseRegisterData) {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role
+      role: user.role,
+      avatar: user.avatar
     },
     token
   };
@@ -188,7 +189,8 @@ export async function loginEnterprise(data: EnterpriseLoginData) {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role
+      role: user.role,
+      avatar: user.avatar
     },
     token
   };

@@ -2,6 +2,53 @@ import { getPrisma } from '../index';
 import { ApplicationStatus } from '@prisma/client';
 
 /**
+ * 创建申请（求职者提交申请）
+ * @param userId 求职者ID
+ * @param jobId 职位ID
+ * @param coverLetter 求职信
+ * @param resumeId 可选：关联已上传简历的ID
+ * @returns 创建的申请
+ */
+export async function createApplication(
+  userId: string,
+  jobId: string,
+  coverLetter: string,
+  resumeId?: string
+) {
+  // 验证职位是否存在、有效
+  const job = await getPrisma().job.findUnique({
+    where: { id: jobId },
+    select: { id: true, status: true, title: true }
+  });
+  if (!job) throw new Error('职位不存在');
+  if (job.status === 'CLOSED') throw new Error('该职位已关闭');
+
+  // 检查是否已申请过
+  const existing = await getPrisma().application.findFirst({
+    where: { userId, jobId }
+  });
+  if (existing) throw new Error('你已经申请过该职位');
+
+  // 创建申请
+  const application = await getPrisma().application.create({
+    data: {
+      userId,
+      jobId,
+      coverLetter,
+      resumeId: resumeId || null,
+      status: 'PENDING'
+    },
+    include: {
+      job: {
+        select: { id: true, title: true, enterpriseId: true }
+      }
+    }
+  });
+
+  return application;
+}
+
+/**
  * 获取职位的申请列表
  * @param jobId 职位ID
  * @param enterpriseId 企业ID（用于权限验证）
