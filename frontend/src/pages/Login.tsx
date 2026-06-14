@@ -2,7 +2,6 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { authAPI } from '../services/api'
 import ErrorAlert from '../components/ErrorAlert'
-import ThemeToggle from '../components/ThemeToggle'
 
 export default function Login() {
 
@@ -36,8 +35,6 @@ export default function Login() {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-200/40 dark:bg-purple-900/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-brand-200/40 dark:bg-brand-900/10 rounded-full blur-3xl" />
       </div>
-
-      <ThemeToggle />
 
       <div className="relative w-full max-w-md">
         {/* Logo + 标题 */}

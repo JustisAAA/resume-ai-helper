@@ -1,7 +1,6 @@
 ﻿import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { enterpriseAPI } from '../services/api'
-import ThemeToggle from '../components/ThemeToggle'
 import ErrorAlert from '../components/ErrorAlert'
 
 export default function EnterpriseRegister() {
@@ -47,8 +46,6 @@ export default function EnterpriseRegister() {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-200/40 dark:bg-purple-900/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-brand-200/40 dark:bg-brand-900/10 rounded-full blur-3xl" />
       </div>
-
-      <ThemeToggle />
 
       <div className="relative w-full max-w-2xl">
         {/* Logo + 标题 */}
