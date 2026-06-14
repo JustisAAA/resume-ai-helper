@@ -1,5 +1,7 @@
 ﻿import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import {
   createApplication,
   updateApplicationStatus,
@@ -11,7 +13,24 @@ import { ApplicationStatus } from '@prisma/client';
 import { getPrisma } from '../index';
 
 const router = Router();
-const formParser = multer().none(); // 解析 FormData（不含文件）
+const PDFParse = require('pdf-parse');
+import mammoth from 'mammoth';
+
+// 申请文件上传配置
+const appStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../../uploads/temp');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
+  }
+});
+const appUpload = multer({ storage: appStorage, fileFilter: (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  cb(null, ['.pdf', '.docx', '.doc', '.txt'].includes(ext));
+}});
 
 /**
  * 提交申请
@@ -24,10 +43,11 @@ const formParser = multer().none(); // 解析 FormData（不含文件）
  * 
  * 权限：已登录用户（求职者）
  */
-router.post('/', authenticateToken, formParser, async (req: Request, res: Response) => {
+router.post('/', authenticateToken, appUpload.single('resume'), async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
-    const { jobId, coverLetter, resumeId } = req.body;
+    const { jobId, coverLetter, resumeId: existingResumeId } = req.body;
+    const file = req.file;
 
     if (!jobId) {
       return res.status(400).json({ error: '缺少 jobId' });
@@ -36,7 +56,55 @@ router.post('/', authenticateToken, formParser, async (req: Request, res: Respon
       return res.status(400).json({ error: '求职信不能为空' });
     }
 
-    const application = await createApplication(userId, jobId, coverLetter.trim(), resumeId);
+    let finalResumeId = existingResumeId || undefined;
+
+    // 如果有上传文件，解析并创建简历记录
+    if (file) {
+      let rawText = '';
+      const filePath = file.path;
+      const fileType = path.extname(file.originalname).toLowerCase();
+
+      try {
+        if (fileType === '.pdf') {
+          const dataBuffer = fs.readFileSync(filePath);
+          const pdfResult = await PDFParse(dataBuffer);
+          rawText = pdfResult.text;
+        } else if (fileType === '.docx') {
+          const result = await mammoth.extractRawText({ path: filePath });
+          rawText = result.value;
+        } else if (fileType === '.txt') {
+          rawText = fs.readFileSync(filePath, 'utf-8');
+        }
+      } catch (e: any) {
+        console.error('申请简历解析失败:', e);
+        rawText = '[解析失败] ' + e.message;
+      }
+
+      // 读原文件为 base64 以便下载
+      let fileBase64 = '';
+      try {
+        const fileBuffer = fs.readFileSync(filePath);
+        const mimeType: Record<string, string> = { '.pdf': 'application/pdf', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.doc': 'application/msword', '.txt': 'text/plain' };
+        fileBase64 = `data:${mimeType[fileType] || 'application/octet-stream'};base64,${fileBuffer.toString('base64')}`;
+      } catch {}
+      try { fs.unlinkSync(filePath); } catch {}
+
+      // 创建简历记录
+      const newResume = await getPrisma().resume.create({
+        data: {
+          userId,
+          title: file.originalname || '申请简历',
+          fileName: file.originalname,
+          fileUrl: fileBase64,
+          rawText,
+          content: { source: 'application_upload' },
+          status: 'PARSED',
+        }
+      });
+      finalResumeId = newResume.id;
+    }
+
+    const application = await createApplication(userId, jobId, coverLetter.trim(), finalResumeId);
     res.status(201).json({ message: '申请提交成功', application });
   } catch (error: any) {
     console.error('创建申请错误:', error);

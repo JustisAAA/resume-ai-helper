@@ -104,7 +104,27 @@ const EnterpriseInterviewReport: React.FC = () => {
         }
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || '加载失败');
+      const errMsg = err.response?.data?.error || err.message || '';
+      // 如果是因为没有报告/尚未AI评估，尝试加载面试基本情况
+      if (errMsg.includes('没有报告')) {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${getApiBaseUrl()}/api/interviews/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const interviewData = await res.json();
+          if (res.ok) {
+            setInterview(interviewData);
+            setError(''); // 清除错误，显示"开始AI评估"按钮
+          } else {
+            setError(errMsg);
+          }
+        } catch {
+          setError(errMsg);
+        }
+      } else {
+        setError(errMsg);
+      }
     } finally {
       setLoading(false);
     }
