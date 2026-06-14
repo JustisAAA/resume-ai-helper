@@ -28,11 +28,19 @@ class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null });
   };
 
+  handleForceRefresh = () => {
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
       }
+
+      const isChunkError = this.state.error?.message?.includes('dynamically imported') || 
+                           this.state.error?.message?.includes('Loading chunk') ||
+                           this.state.error?.message?.includes('Importing a module');
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
@@ -44,7 +52,9 @@ class ErrorBoundary extends Component<Props, State> {
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">页面出了点问题</h2>
             <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
-              {this.state.error?.message || '发生了意外错误，请尝试刷新页面'}
+              {isChunkError
+                ? '页面加载出错，可能是部署更新导致的缓存不匹配'
+                : (this.state.error?.message || '发生了意外错误，请尝试刷新页面')}
             </p>
             <div className="flex gap-3 justify-center">
               <button
@@ -52,6 +62,12 @@ class ErrorBoundary extends Component<Props, State> {
                 className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 重试
+              </button>
+              <button
+                onClick={this.handleForceRefresh}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                {isChunkError ? '强制刷新页面 (Ctrl+F5)' : '强制刷新'}
               </button>
               <button
                 onClick={() => window.location.href = '/'}
