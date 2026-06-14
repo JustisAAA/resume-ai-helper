@@ -98,7 +98,7 @@ router.post('/', authenticateToken, appUpload.single('resume'), async (req: Requ
           fileUrl: fileBase64,
           rawText,
           content: { source: 'application_upload' },
-          status: 'PARSED',
+          status: 'ANALYZED',
         }
       });
       finalResumeId = newResume.id;
