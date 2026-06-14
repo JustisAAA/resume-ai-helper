@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useRef } from 'react'
 import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/Toast'
@@ -64,8 +64,10 @@ export default function ToolsQuestions() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<QuestionsResult | null>(null)
-  const resumeFileRef = { current: null as HTMLInputElement | null }
-  const jdFileRef = { current: null as HTMLInputElement | null }
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [jdFile, setJdFile] = useState<File | null>(null)
+  const resumeFileInputRef = useRef<HTMLInputElement>(null)
+  const jdFileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
   const { showToast } = useToast()
 
@@ -97,6 +99,7 @@ export default function ToolsQuestions() {
     const f = e.target.files?.[0]
     if (!f) return
     if (f.size > 10 * 1024 * 1024) { setError('文件大小不能超过 10MB'); return }
+    setResumeFile(f)
     setError('')
     try {
       const token = localStorage.getItem('token')
@@ -111,6 +114,7 @@ export default function ToolsQuestions() {
     const f = e.target.files?.[0]
     if (!f) return
     if (f.size > 10 * 1024 * 1024) { setError('文件大小不能超过 10MB'); return }
+    setJdFile(f)
     setError('')
     try {
       const token = localStorage.getItem('token')
@@ -264,11 +268,23 @@ export default function ToolsQuestions() {
               <div className="p-6">
                 {resumeActiveTab === 'upload' ? (
                   <div>
-                    <input ref={el => { resumeFileRef.current = el }} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleResumeFileChange} className="hidden" />
-                    <div onClick={() => resumeFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
+                    <input ref={resumeFileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleResumeFileChange} className="hidden" />
+                    <div onClick={() => resumeFileInputRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
+                      {resumeFile ? (
+                        <span className="text-sm text-cyan-600 dark:text-cyan-400 font-medium">{resumeFile.name}</span>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
+                      )}
                     </div>
+                    {resumeFile && (
+                      <button
+                        onClick={() => { setResumeFile(null); setParsedResumeText(''); if (resumeFileInputRef.current) resumeFileInputRef.current.value = '' }}
+                        className="mt-2 text-xs text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        移除文件
+                      </button>
+                    )}
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">上传文件后将自动解析内容</p>
                   </div>
                 ) : (
@@ -292,11 +308,23 @@ export default function ToolsQuestions() {
               <div className="p-6">
                 {jdActiveTab === 'upload' ? (
                   <div>
-                    <input ref={el => { jdFileRef.current = el }} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleJdFileChange} className="hidden" />
-                    <div onClick={() => jdFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
+                    <input ref={jdFileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleJdFileChange} className="hidden" />
+                    <div onClick={() => jdFileInputRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-colors">
                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
+                      {jdFile ? (
+                        <span className="text-sm text-cyan-600 dark:text-cyan-400 font-medium">{jdFile.name}</span>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
+                      )}
                     </div>
+                    {jdFile && (
+                      <button
+                        onClick={() => { setJdFile(null); setParsedJdText(''); if (jdFileInputRef.current) jdFileInputRef.current.value = '' }}
+                        className="mt-2 text-xs text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        移除文件
+                      </button>
+                    )}
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">上传文件后将自动解析内容</p>
                   </div>
                 ) : (

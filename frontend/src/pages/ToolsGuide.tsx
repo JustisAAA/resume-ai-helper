@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useRef } from 'react'
 import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/Toast'
@@ -38,7 +38,8 @@ export default function ToolsGuide() {
   const [guideLoading, setGuideLoading] = useState(false)
   const [guideError, setGuideError] = useState('')
   const [guideResult, setGuideResult] = useState<GuideResult | null>(null)
-  const resumeFileRef = { current: null as HTMLInputElement | null }
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const resumeFileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
   const { showToast } = useToast()
 
@@ -53,12 +54,12 @@ export default function ToolsGuide() {
     const f = e.target.files?.[0]
     if (!f) return
     if (f.size > 10 * 1024 * 1024) { setGuideError('文件大小不能超过 10MB'); return }
+    setResumeFile(f)
     setGuideError('')
     try {
       const token = localStorage.getItem('token')
       const res = await toolsAPI.parseFile(token!, f)
       setParsedResumeText(res.text || '')
-      showToast('文件解析成功，共 ' + (res.text?.length || 0) + ' 字', 'success')
     } catch {
       setGuideError('文件解析失败，请切换"粘贴"模式手动输入')
       setParsedResumeText('')
@@ -201,11 +202,23 @@ export default function ToolsGuide() {
                   <div className="p-6">
                     {resumeActiveTab === 'upload' ? (
                       <div>
-                        <input ref={el => { resumeFileRef.current = el }} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleResumeFileChange} className="hidden" />
-                        <div onClick={() => resumeFileRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-amber-400 hover:bg-amber-50/30 cursor-pointer transition-colors">
+                        <input ref={resumeFileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleResumeFileChange} className="hidden" />
+                        <div onClick={() => resumeFileInputRef.current?.click()} className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-amber-400 hover:bg-amber-50/30 cursor-pointer transition-colors">
                           <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                          <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
+                          {resumeFile ? (
+                            <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{resumeFile.name}</span>
+                          ) : (
+                            <span className="text-sm text-gray-500 dark:text-gray-500">点击选择文件</span>
+                          )}
                         </div>
+                        {resumeFile && (
+                          <button
+                            onClick={() => { setResumeFile(null); setParsedResumeText(''); if (resumeFileInputRef.current) resumeFileInputRef.current.value = '' }}
+                            className="mt-2 text-xs text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            移除文件
+                          </button>
+                        )}
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">上传文件后将自动解析内容</p>
                       </div>
                     ) : (
