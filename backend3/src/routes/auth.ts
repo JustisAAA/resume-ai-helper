@@ -209,19 +209,25 @@ router.put('/me/password', authenticateToken, async (req: AuthRequest, res: Resp
   }
 });
 
-// 上传头像
+// 上传头像（直接存 base64 到数据库，避免 Railway 文件丢失）
 router.post('/me/avatar', authenticateToken, uploadAvatar.single('avatar'), async (req: AuthRequest, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: '未上传文件' });
     }
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    // 读取文件转为 base64
+    const imageBuffer = fs.readFileSync(req.file.path);
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const mimeType: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
+    const avatarBase64 = `data:${mimeType[ext] || 'image/png'};base64,${imageBuffer.toString('base64')}`;
+    // 删除临时文件
+    try { fs.unlinkSync(req.file.path); } catch {}
     const user = await getPrisma().user.update({
       where: { id: req.user!.userId },
-      data: { avatar: avatarUrl },
+      data: { avatar: avatarBase64 },
       select: { id: true, email: true, name: true, role: true, createdAt: true, avatar: true }
     });
-    res.json({ user, avatarUrl });
+    res.json({ user, avatarUrl: avatarBase64 });
   } catch (error) {
     console.error('上传头像错误:', sanitizeError(error));
     res.status(500).json({ error: '服务器内部错误' });

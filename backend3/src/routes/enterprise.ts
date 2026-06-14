@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { registerEnterprise, loginEnterprise, getEnterpriseProfile, updateEnterpriseProfile, getDashboardStats } from '../services/enterpriseService';
 import { authenticateToken, requireEnterprise, AuthRequest } from '../middleware/auth';
 import { uploadLogo } from '../middleware/uploadMiddleware';
@@ -107,10 +109,14 @@ router.put('/profile', authenticateToken, requireEnterprise, uploadLogo, async (
     const userId = req.user!.userId;
     const { name, description, website, industry, size, location, contactEmail, contactPhone } = req.body;
 
-    // 处理 logo 上传
+    // 处理 logo 上传（直接存 base64 到数据库）
     let logo = req.body.logo;
     if (req.file) {
-      logo = `/uploads/logos/${req.file.filename}`;
+      const imageBuffer = fs.readFileSync(req.file.path);
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const mimeType: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
+      logo = `data:${mimeType[ext] || 'image/png'};base64,${imageBuffer.toString('base64')}`;
+      try { fs.unlinkSync(req.file.path); } catch {}
     }
 
     const enterprise = await updateEnterpriseProfile(userId, {
