@@ -7,9 +7,9 @@
  * const url = getApiUrl('/auth/login');
  */
 
-// 从环境变量读取 API 基础地址，默认使用同源路径
-// Vite 构建时可通过 VITE_API_URL=/ 设置为同源访问
-const API_BASE = (import.meta.env.VITE_API_URL as string) || '/';
+// 从环境变量读取 API 基础地址，默认使用空字符串（同源路径）
+// Vite 构建时可设置 VITE_API_URL= 使用同源访问
+const API_BASE = ((import.meta.env.VITE_API_URL as string) || '').replace(/\/$/, '');
 
 // 确保 URL 拼接正确（去掉尾部的 /）
 const BASE = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;

@@ -2,7 +2,7 @@
 import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate, useParams } from 'react-router-dom';
 import { jobAPI, resumeAPI } from '../services/api';
-import { getApiBaseUrl } from '../utils/api';
+import { getApiUrl } from '../utils/api';
 import { useToast } from '../components/Toast';
 import { PaperClipIcon } from '@heroicons/react/24/outline';
 import Loading from '../components/Loading';
@@ -21,8 +21,6 @@ interface Resume {
   id: string;
   title: string;
 }
-
-const API_BASE = getApiBaseUrl();
 
 export default function JobApply() {
   const { id } = useParams();
@@ -94,7 +92,7 @@ export default function JobApply() {
         formData.append('resume', resumeFile);
       }
 
-      const res = await fetch(`${API_BASE}/api/applications`, {
+      const res = await fetch(getApiUrl('/applications'), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
