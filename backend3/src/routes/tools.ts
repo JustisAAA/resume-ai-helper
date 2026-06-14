@@ -480,22 +480,8 @@ ${jd}
       };
     }
     
-    // 计算语义匹配分数（Embedding + 余弦相似度）
-    try {
-      const [resumeEmbedding, jdEmbedding] = await Promise.all([
-        embedText(resume),
-        embedText(jd)
-      ]);
-      if (resumeEmbedding.length > 0 && jdEmbedding.length > 0) {
-        const semanticScore = Math.round(cosineSimilarity(resumeEmbedding, jdEmbedding) * 100);
-        result.semantic_score = Math.max(0, Math.min(100, semanticScore));
-      } else {
-        result.semantic_score = result.overall_score || 0;
-      }
-    } catch (e) {
-      console.error('语义分数计算失败:', sanitizeError(e));
-      result.semantic_score = result.overall_score || 0;
-    }
+    // 语义匹配分数直接复用 AI 的 overall_score（Embedding API 不可用）
+    result.semantic_score = result.overall_score || 0;
     
     // 检测过度包装词
     result.overpackaging_words = detectOverpackagingWords(resume);
