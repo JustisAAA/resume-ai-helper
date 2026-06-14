@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTheme } from '../context/ThemeContext'
 import { interviewAPI, Interview } from '../services/api'
-import { getApiBaseUrl } from '../utils/api'
+import { getImageUrl } from '../utils/image'
 import { answerSchema, type AnswerFormData } from '../schemas/answerSchema'
 import Loading, { ButtonSpinner } from '../components/Loading'
 import ErrorAlert from '../components/ErrorAlert'
@@ -378,9 +378,10 @@ export default function InterviewRoom() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // 计算进度：完全基于 chatHistory 实时计算
-  // 面试官追问的新问题也在 chatHistory 中，所以总数 = 面试官消息数
-  const totalQuestions = chatHistory.filter(m => m.role === 'interviewer').length || (interview?.questions?.length || 0)
+  // 计算进度：基于 interview.questions.length 作为总题数基准（数据库存储的题数为准）
+  // 注意：AI 可能会动态生成追问，但数据库中的 questions 长度在面试过程中会递增
+  // 为避免分母随追问而增大，使用 answeredCount + 当前正在进行中的题目作为分母
+  const totalQuestions = interview?.questions?.length || (answeredCount + (currentQuestion && !interviewEnded ? 1 : 0))
   const answeredCount = chatHistory.filter(m => m.role === 'candidate').length
   const progressPercent = totalQuestions > 0 ? Math.min(Math.round((answeredCount / totalQuestions) * 100), 100) : 0
 
@@ -672,7 +673,7 @@ export default function InterviewRoom() {
                     {/* 用户头像 */}
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm overflow-hidden">
                       {userAvatar ? (
-                        <img src={userAvatar.startsWith('http') ? userAvatar : `${getApiBaseUrl()}${userAvatar}`} alt="" className="w-9 h-9 rounded-full object-cover" />
+                        <img src={getImageUrl(userAvatar)} alt="" className="w-9 h-9 rounded-full object-cover" />
                       ) : (
                         <span>我</span>
                       )}
@@ -826,6 +827,7 @@ export default function InterviewRoom() {
               <button
                 type="submit"
                 disabled={!answer.trim() || submitting}
+                onClick={() => handleSubmit(onSubmitAnswer)()}
                 className="px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl font-medium hover:from-brand-700 hover:to-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center gap-2"
               >
                 {submitting ? (

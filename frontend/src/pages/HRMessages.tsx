@@ -237,7 +237,7 @@ function HRChatWindow({ partnerId, jobId }: { partnerId: string; jobId?: string 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.senderId === partnerId ? 'justify-start' : 'justify-end'}`}>
-            <div className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${msg.senderId === partnerId ? 'bg-white dark:bg-gray-800 border' : 'bg-brand-500 text-white'}`}>
+            <div className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${msg.senderId === partnerId ? 'bg-white dark:bg-gray-800 border text-gray-900 dark:text-white' : 'bg-brand-500 text-white'}`}>
               {msg.content}
             </div>
           </div>

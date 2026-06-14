@@ -6,5 +6,9 @@ const API_BASE = getApiBaseUrl();
 export function getImageUrl(url: string | undefined): string {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${API_BASE}${url}`;
+  // API_BASE 为 '/' 时，路径已以 '/' 开头则可直接使用
+  if (API_BASE === '/' && url.startsWith('/')) return url;
+  const base = API_BASE.replace(/\/$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
 }

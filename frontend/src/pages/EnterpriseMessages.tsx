@@ -356,14 +356,13 @@ function EnterpriseMessageWindow({ partnerId, nameHint, jobId: _propJobId, jobTi
       setMessages(msgs);
       // 从第一条消息获取partner信息
       if (msgs.length > 0 && !partner) {
-        const userId = localStorage.getItem('user')
-          ? JSON.parse(localStorage.getItem('user')!).id
-          : '';
+        const userId = JSON.parse(localStorage.getItem('user') || '{}').id || '';
         const otherMsg = msgs.find((m: Message) => m.senderId !== userId) || msgs[0];
+        const sender = otherMsg.sender || {};
         setPartner({
           id: partnerId,
-          name: otherMsg.sender.name,
-          avatar: otherMsg.sender.avatar,
+          name: sender.name || '求职者',
+          avatar: sender.avatar,
         });
       }
       if (msgs.length > 0) {
@@ -470,10 +469,12 @@ function EnterpriseMessageWindow({ partnerId, nameHint, jobId: _propJobId, jobTi
               return (
                 <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   {/* 对方消息头像（左侧） */}
-                  {!isOwn && (
+                  {!isOwn && (() => {
+                    const senderAvatar = msg.sender?.avatar;
+                    return (
                     <div className="shrink-0 mr-2">
-                      {msg.sender.avatar ? (
-                        <img src={getImageUrl(msg.sender.avatar)} alt="" className="w-8 h-8 rounded-full" onError={(e) => {
+                      {senderAvatar ? (
+                        <img src={getImageUrl(senderAvatar)} alt="" className="w-8 h-8 rounded-full" onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           const parent = img.parentElement;
                           img.style.display = 'none';
@@ -481,11 +482,12 @@ function EnterpriseMessageWindow({ partnerId, nameHint, jobId: _propJobId, jobTi
                           if (fb) (fb as HTMLElement).style.display = 'flex';
                         }} />
                       ) : null}
-                      <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center msg-avatar-fb" style={{ display: msg.sender.avatar ? 'none' : 'flex' }}>
+                      <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center msg-avatar-fb" style={{ display: senderAvatar ? 'none' : 'flex' }}>
                         <UserCircleIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
                   <div className={`max-w-[70%]`}>
                     <div
                       className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${

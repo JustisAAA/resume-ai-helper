@@ -208,7 +208,7 @@ const parseStorage = multer.diskStorage({
 });
 const parseUpload = multer({ storage: parseStorage, fileFilter: (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  cb(null, ['.pdf', '.docx'].includes(ext));
+  cb(null, ['.pdf', '.docx', '.doc', '.txt'].includes(ext));
 }});
 
 // ========== 文件解析接口 ==========

@@ -3,7 +3,7 @@ import ThemeToggle from '../components/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { authAPI, UserProfile } from '../services/api'
-import { getApiBaseUrl } from '../utils/api'
+import { getImageUrl } from '../utils/image'
 import { useToast } from '../components/Toast'
 import Loading from '../components/Loading'
 import ErrorAlert from '../components/ErrorAlert'
@@ -201,9 +201,10 @@ const [user, setUser] = useState<UserProfile | null>(null)
               <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden ring-4 ring-white dark:ring-gray-900">
                 {user?.avatar ? (
                   <img
-                    src={user.avatar.startsWith('http') ? user.avatar : `${getApiBaseUrl()}${user.avatar}`}
+                    src={`${getImageUrl(user.avatar)}?t=${Date.now()}`}
                     alt=""
                     className="w-24 h-24 rounded-full object-cover"
+                    key={user.avatar}
                   />
                 ) : (
                   <span className="select-none">{(user?.name || user?.email || '?')[0].toUpperCase()}</span>

@@ -206,7 +206,7 @@ export default function ToolsOptimize() {
             {/* 核心亮点 */}
             {result.highlights && result.highlights.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 px-6 py-4 border-b border-amber-200/50">
+                <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-amber-200/50 dark:border-gray-600">
                   <h3 className="font-bold text-gray-900 dark:text-white">⭐ 核心亮点</h3>
                 </div>
                 <div className="p-6">
@@ -224,7 +224,7 @@ export default function ToolsOptimize() {
             {/* 能力标签 */}
             {result.skills_tags && result.skills_tags.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-brand-200/50 dark:border-gray-600">
                   <h3 className="font-bold text-gray-900 dark:text-white">🏷 能力标签</h3>
                 </div>
                 <div className="p-6">
@@ -242,7 +242,7 @@ export default function ToolsOptimize() {
             {/* 岗位匹配分析 */}
             {result.match_analysis && result.match_analysis !== null && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-rose-50 to-rose-100/50 px-6 py-4 border-b border-rose-200/50">
+                <div className="bg-gradient-to-r from-rose-50 to-rose-100/50 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-rose-200/50 dark:border-gray-600">
                   <h3 className="font-bold text-gray-900 dark:text-white">📊 岗位匹配分析</h3>
                 </div>
                 <div className="p-6 space-y-4">
@@ -270,7 +270,7 @@ export default function ToolsOptimize() {
             {/* 优化前后对比 */}
             {(beforeMatch || afterMatch) && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-brand-200/50 dark:border-gray-600">
                   <h3 className="font-bold text-gray-900 dark:text-white">📊 优化前后对比</h3>
                 </div>
                 <div className="p-6">
@@ -302,7 +302,7 @@ export default function ToolsOptimize() {
 
             {/* 优化后简历 */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 px-6 py-4 border-b border-amber-200/50 flex justify-between items-center">
+                <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-amber-200/50 dark:border-gray-600 flex justify-between items-center">
                   <h3 className="font-bold text-gray-900 dark:text-white">✨ 优化后的简历</h3>
                   <div className="flex items-center gap-2">
                     <button
@@ -340,7 +340,7 @@ export default function ToolsOptimize() {
             {/* 改动对比 */}
             {result.changes_summary && result.changes_summary.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-brand-200/50 dark:border-gray-600">
                   <h3 className="font-bold text-gray-900 dark:text-white">🔄 关键改动对比</h3>
                 </div>
                 <div className="p-6 space-y-4">
@@ -367,7 +367,7 @@ export default function ToolsOptimize() {
             {/* 建议 */}
             {result.tips && result.tips.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 px-6 py-4 border-b border-brand-200/50">
+                <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-brand-200/50 dark:border-gray-600">
                   <h3 className="font-bold text-gray-900 dark:text-white">💡 额外建议</h3>
                 </div>
                 <div className="p-6">
