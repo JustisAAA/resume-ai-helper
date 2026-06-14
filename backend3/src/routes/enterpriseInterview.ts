@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createInterview, getEnterpriseInterviews, getInterviewReport } from '../services/enterpriseInterviewService';
 import { authenticateToken, requireEnterprise, requireEnterpriseOrHR } from '../middleware/auth';
+import { sanitizeError } from '../utils/sanitize';
 
 const router = Router();
 
@@ -53,7 +54,7 @@ router.post('/', authenticateToken, requireEnterprise, async (req: Request, res:
       }
     });
   } catch (error: any) {
-    console.error('创建面试邀请错误:', error);
+    console.error('创建面试邀请错误:', sanitizeError(error));
 
     // 根据错误信息返回相应的状态码
     if (error.message === '申请不存在' || error.message === '该申请没有关联的简历，无法创建面试') {
@@ -105,7 +106,7 @@ router.get('/', authenticateToken, requireEnterpriseOrHR, async (req: Request, r
     const interviews = await getEnterpriseInterviews(enterprise.id);
     res.json({ message: '获取面试列表成功', interviews });
   } catch (error: any) {
-    console.error('获取面试列表错误:', error);
+    console.error('获取面试列表错误:', sanitizeError(error));
     res.status(500).json({ error: error.message || '获取面试列表失败' });
   }
 });
@@ -147,7 +148,7 @@ router.get('/:id/report', authenticateToken, requireEnterpriseOrHR, async (req: 
     const report = await getInterviewReport(id, enterpriseId);
     res.json({ message: '获取面试报告成功', report });
   } catch (error: any) {
-    console.error('获取面试报告错误:', error);
+    console.error('获取面试报告错误:', sanitizeError(error));
 
     // 根据错误信息返回相应的状态码
     if (error.message === '面试不存在' || error.message === '该面试没有报告') {

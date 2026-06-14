@@ -11,6 +11,7 @@ import {
 import { authenticateToken, requireEnterprise } from '../middleware/auth';
 import { ApplicationStatus } from '@prisma/client';
 import { getPrisma } from '../index';
+import { sanitizeError } from '../utils/sanitize';
 
 const router = Router();
 const PDFParse = require('pdf-parse');
@@ -76,7 +77,7 @@ router.post('/', authenticateToken, appUpload.single('resume'), async (req: Requ
           rawText = fs.readFileSync(filePath, 'utf-8');
         }
       } catch (e: any) {
-        console.error('申请简历解析失败:', e);
+        console.error('申请简历解析失败:', sanitizeError(e));
         rawText = '[解析失败] ' + e.message;
       }
 
@@ -107,7 +108,7 @@ router.post('/', authenticateToken, appUpload.single('resume'), async (req: Requ
     const application = await createApplication(userId, jobId, coverLetter.trim(), finalResumeId);
     res.status(201).json({ message: '申请提交成功', application });
   } catch (error: any) {
-    console.error('创建申请错误:', error);
+    console.error('创建申请错误:', sanitizeError(error));
     if (error.message === '职位不存在' || error.message === '该职位已关闭' || error.message === '你已经申请过该职位') {
       return res.status(400).json({ error: error.message });
     }
@@ -159,7 +160,7 @@ router.patch('/:id/status', authenticateToken, requireEnterprise, async (req: Re
       application
     });
   } catch (error: any) {
-    console.error('更新申请状态错误:', error);
+    console.error('更新申请状态错误:', sanitizeError(error));
 
     // 根据错误信息返回相应的状态码
     if (error.message === '申请不存在') {
@@ -200,7 +201,7 @@ router.get('/:id/resume', authenticateToken, requireEnterprise, async (req: Requ
       resume
     });
   } catch (error: any) {
-    console.error('获取申请简历错误:', error);
+    console.error('获取申请简历错误:', sanitizeError(error));
 
     // 根据错误信息返回相应的状态码
     if (error.message === '申请不存在' || error.message === '该申请没有关联的简历') {
@@ -259,7 +260,7 @@ router.get('/me', authenticateToken, async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('获取申请列表错误:', error);
+    console.error('获取申请列表错误:', sanitizeError(error));
     res.status(500).json({ error: error.message || '获取申请列表失败' });
   }
 });
@@ -292,7 +293,7 @@ router.get('/:id', authenticateToken, requireEnterprise, async (req: Request, re
       application
     });
   } catch (error: any) {
-    console.error('获取申请详情错误:', error);
+    console.error('获取申请详情错误:', sanitizeError(error));
 
     // 根据错误信息返回相应的状态码
     if (error.message === '申请不存在') {

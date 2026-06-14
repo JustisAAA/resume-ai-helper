@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getPrisma } from '../index';
+import { sanitizeError } from '../utils/sanitize';
 
 const APPID = process.env.YUANQI_ENTERPRISE_APPID || '';
 const APPKEY = process.env.YUANQI_ENTERPRISE_APPKEY || '';
@@ -96,7 +97,7 @@ ${resumeContent}
       scoringConfig: config, // 保存本次分析使用的评分标准
     };
   } catch (error: any) {
-    console.error('企业AI分析简历失败:', error.message);
+    console.error('企业AI分析简历失败:', sanitizeError(error));
     throw new Error(error.response?.data?.message || error.message || 'AI分析失败');
   }
 }

@@ -333,31 +333,6 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
   if (normA === 0 || normB === 0) return 0;
   return dotProduct / (normA * normB);
 }
-
-// 调用腾讯元器Embedding API
-async function embedText(text: string): Promise<number[]> {
-  const appkey = process.env.YUANQI_APPKEY;
-  if (!appkey) {
-    throw new Error('服务器配置错误：缺少 YUANQI_APPKEY 环境变量');
-  }
-  try {
-    const response = await axios.post('https://yuanqi.tencent.com/openapi/v1/embeddings', {
-      model: 'text-embedding-ada-002',
-      input: text.substring(0, 8000)
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${appkey}`
-      },
-      timeout: 30000
-    });
-    return (response as any).data.data[0].embedding;
-  } catch (error: any) {
-    console.error('Embedding API调用失败:', error?.response?.data || error.message);
-    throw error;
-  }
-}
-
 // 检测过度包装词
 function detectOverpackagingWords(resumeText: string): { word: string, sentence: string, has_support: boolean }[] {
   const overpackagingWords = ['精通', '深入掌握', '熟练掌握', '精通掌握', '资深', '专家', '主导', '架构师', '全栈', '顶尖', '深刻理解'];
