@@ -127,7 +127,17 @@ export async function getHRApplications(userId: string, pagination?: { page?: nu
   const [applications, total] = await Promise.all([
     getPrisma().application.findMany({
       where: { jobId: hrAccount.jobId },
-      include: { user: true, resume: true, job: true },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, avatar: true }
+        },
+        resume: {
+          select: { id: true, title: true, fileName: true, fileUrl: true, rawText: true, content: true, score: true, status: true }
+        },
+        job: {
+          select: { id: true, title: true, location: true, status: true }
+        }
+      },
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
@@ -190,7 +200,14 @@ export async function updateHRApplicationStatus(userId: string, applicationId: s
   return getPrisma().application.update({
     where: { id: applicationId },
     data: { status: status as any },
-    include: { user: true, job: true }
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, avatar: true }
+      },
+      job: {
+        select: { id: true, title: true }
+      }
+    }
   });
 }
 
