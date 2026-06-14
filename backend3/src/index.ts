@@ -52,6 +52,9 @@ export function getPrisma(): PrismaClient {
 export function createApp(): Express {
   const app: Express = express();
 
+  // 信任反向代理（Railway/Nginx 等），使 rate-limit 能正确获取客户端 IP
+  app.set('trust proxy', 1);
+
   // ── 基础中间件 ──
   app.use(cors({
     origin: isProduction
