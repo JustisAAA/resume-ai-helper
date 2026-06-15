@@ -461,8 +461,18 @@ ${answer}
         evaluation = JSON.parse(jsonMatch ? jsonMatch[0] : fullContent);
         if (!evaluation.highlights) evaluation.highlights = [];
         if (!evaluation.improvements) evaluation.improvements = [];
-      } catch {
-        evaluation = { score: 5, comment: '评价解析失败', highlights: [], improvements: [], next_question: '' };
+      } catch (firstErr) {
+        // 尝试修复 UTF-8 截断错误（流式传输可能把多字节中文字符切到两个 chunk）
+        try {
+          const buf = Buffer.from(fullContent, 'binary');
+          const repaired = buf.toString('utf8');
+          const jsonMatch = repaired.match(/\{[\s\S]*\}/);
+          evaluation = JSON.parse(jsonMatch ? jsonMatch[0] : repaired);
+          if (!evaluation.highlights) evaluation.highlights = [];
+          if (!evaluation.improvements) evaluation.improvements = [];
+        } catch {
+          evaluation = { score: 5, comment: '评价解析失败', highlights: [], improvements: [], next_question: '' };
+        }
       }
 
       // 保存消息历史
@@ -484,17 +494,29 @@ ${answer}
       answers.push(newAnswer);
 
       const nextQuestion = evaluation.next_question || '';
-      // P1-4: 硬上限兜底——AI 不按 prompt 返回空时强制结束
-      if (nextQuestion && answers.length >= maxQuestions) {
-        // 已达到配置题数，忽略 AI 返回的额外题目
-        if (nextQuestion) questions.push(nextQuestion); // 仍记录但不继续
-      } else if (nextQuestion) {
-        questions.push(nextQuestion);
+
+      // 兜底逻辑：AI 返回空 next_question 但还没达到配置题数 → 用默认问题继续
+      const fallbackQuestions = [
+        `请具体谈谈您在${interview.position || '该岗位'}方面的项目经验。`,
+        `您对${interview.position || '该岗位'}岗位的核心技能要求有哪些理解？`,
+        `您如何看待${interview.position || '该岗位'}领域的最新发展趋势？`,
+        `请举一个您在工作中遇到最挑战性的问题，以及您是如何解决的。`,
+        `您对未来${interview.position || '该岗位'}方向有什么职业规划？`
+      ];
+      const effectiveNextQuestion = (nextQuestion || answers.length < maxQuestions)
+        ? (nextQuestion || fallbackQuestions[answers.length % fallbackQuestions.length])
+        : '';
+
+      // 已达配置题数上限 → 强制结束
+      if (answers.length >= maxQuestions) {
+        if (nextQuestion) questions.push(nextQuestion);
+      } else if (effectiveNextQuestion) {
+        questions.push(effectiveNextQuestion);
       }
 
       const updateData: any = { answers, questions, messages };
-      // 面试结束条件：没有下一题 或 已达上限
-      if (!nextQuestion || answers.length >= maxQuestions) {
+      // 只有达到配置题数上限才结束面试
+      if (answers.length >= maxQuestions) {
         updateData.status = 'COMPLETED';
         updateData.completedAt = new Date();
         const totalScore = answers.reduce((sum: number, a: any) => sum + a.score, 0);

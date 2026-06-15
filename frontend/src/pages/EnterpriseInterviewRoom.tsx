@@ -493,6 +493,13 @@ export default function EnterpriseInterviewRoom() {
               >
                 返回企业面试
               </button>
+              {/* 无条件跳转备用按钮：React Router 导航失败时使用 */}
+              <button
+                onClick={() => { window.location.href = '/enterprise-interviews'; }}
+                className="px-6 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors mt-2"
+              >
+                强制返回
+              </button>
             </div>
           )}
 
