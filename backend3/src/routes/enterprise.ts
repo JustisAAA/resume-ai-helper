@@ -110,26 +110,28 @@ router.put('/profile', authenticateToken, requireEnterprise, uploadLogo, async (
     const { name, description, website, industry, size, location, contactEmail, contactPhone } = req.body;
 
     // 处理 logo 上传（直接存 base64 到数据库）
-    let logo = req.body.logo;
+    let newLogoBase64: string | undefined;
     if (req.file) {
       const imageBuffer = fs.readFileSync(req.file.path);
       const ext = path.extname(req.file.originalname).toLowerCase();
       const mimeType: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
-      logo = `data:${mimeType[ext] || 'image/png'};base64,${imageBuffer.toString('base64')}`;
+      newLogoBase64 = `data:${mimeType[ext] || 'image/png'};base64,${imageBuffer.toString('base64')}`;
       try { fs.unlinkSync(req.file.path); } catch {}
     }
 
-    const enterprise = await updateEnterpriseProfile(userId, {
-      name,
-      description,
-      logo,
-      website,
-      industry,
-      size,
-      location,
-      contactEmail,
-      contactPhone
-    });
+    // 只构建需要更新的字段（logo 未上传时不传，避免覆盖已有 logo）
+    const updateData: Record<string, any> = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (website !== undefined) updateData.website = website;
+    if (industry !== undefined) updateData.industry = industry;
+    if (size !== undefined) updateData.size = size;
+    if (location !== undefined) updateData.location = location;
+    if (contactEmail !== undefined) updateData.contactEmail = contactEmail;
+    if (contactPhone !== undefined) updateData.contactPhone = contactPhone;
+    if (newLogoBase64 !== undefined) updateData.logo = newLogoBase64;
+
+    const enterprise = await updateEnterpriseProfile(userId, updateData);
 
     res.json({ message: '企业资料更新成功', enterprise });
   } catch (error: any) {
