@@ -12,6 +12,7 @@ import { authenticateToken, requireEnterprise, AuthRequest } from '../middleware
 import { ApplicationStatus } from '@prisma/client';
 import { getPrisma } from '../index';
 import { sanitizeError } from '../utils/sanitize';
+import { fixFilename } from '../utils/filename';
 
 const router = Router();
 const PDFParse = require('pdf-parse');
@@ -90,12 +91,14 @@ router.post('/', authenticateToken, appUpload.single('resume'), async (req: Auth
       } catch {}
       try { fs.unlinkSync(filePath); } catch {}
 
+      const fixedName = fixFilename(file.originalname);
+
       // 创建简历记录
       const newResume = await getPrisma().resume.create({
         data: {
           userId,
-          title: file.originalname || '申请简历',
-          fileName: file.originalname,
+          title: fixedName || '申请简历',
+          fileName: fixedName,
           fileUrl: fileBase64,
           rawText,
           content: { source: 'application_upload' },

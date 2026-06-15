@@ -9,6 +9,7 @@ import axios from 'axios';
 import { authenticateToken, requireUser, AuthRequest } from '../middleware/auth';
 import { sanitizeError } from '../utils/sanitize';
 import { extractApiError } from '../utils/extractError';
+import { fixFilename } from '../utils/filename';
 
 const router = Router();
 
@@ -92,12 +93,13 @@ router.post('/upload', authenticateToken, requireUser, upload.single('file'), as
     }
 
     // 创建简历记录
-    const resume = await getPrisma().resume.create({
-      data: {
-        userId,
-        title: title || file.originalname,
-        fileName: file.originalname,
-        fileUrl: `/uploads/${file.filename}`,
+      const fixedName = fixFilename(file.originalname);
+      const resume = await getPrisma().resume.create({
+        data: {
+          userId,
+          title: title || fixedName,
+          fileName: fixedName,
+          fileUrl: `/uploads/${file.filename}`,
         fileType: fileType.replace('.', ''),
         rawText,
         status: 'DRAFT'
