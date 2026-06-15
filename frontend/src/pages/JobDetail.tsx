@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { jobAPI } from '../services/api';
 import { getImageUrl } from '../utils/image';
 import { useToast } from '../components/Toast';
-import { MapPinIcon, CurrencyDollarIcon, BuildingOfficeIcon, FlagIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, CurrencyDollarIcon, BuildingOfficeIcon, FlagIcon, GlobeAltIcon, PhoneIcon, EnvelopeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import ReportModal from '../components/ReportModal';
 import ErrorAlert from '../components/ErrorAlert';
 import Loading from '../components/Loading';
@@ -25,9 +25,16 @@ interface JobDetail {
     name: string;
     logo?: string;
     description?: string;
+    website?: string;
     industry?: string;
     size?: string;
+    location?: string;
+    contactEmail?: string;
+    contactPhone?: string;
     userId?: string;
+    user?: {
+      creditScore: number;
+    };
   };
   hrAccount?: {
     userId: string;
@@ -266,11 +273,54 @@ export default function JobDetail() {
                   </div>
                 </div>
                 {job.enterprise.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{job.enterprise.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{job.enterprise.description}</p>
                 )}
-                {job.enterprise.size && (
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">规模：{job.enterprise.size}</p>
-                )}
+
+                <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
+                  {job.enterprise.location && (
+                    <div className="flex items-center gap-2">
+                      <MapPinIcon className="w-4 h-4 shrink-0" />
+                      <span>{job.enterprise.location}</span>
+                    </div>
+                  )}
+                  {job.enterprise.website && (
+                    <div className="flex items-center gap-2">
+                      <GlobeAltIcon className="w-4 h-4 shrink-0" />
+                      <a href={job.enterprise.website.startsWith('http') ? job.enterprise.website : `https://${job.enterprise.website}`}
+                         target="_blank" rel="noopener noreferrer"
+                         className="text-brand-600 dark:text-brand-400 hover:underline truncate">
+                        {job.enterprise.website}
+                      </a>
+                    </div>
+                  )}
+                  {job.enterprise.contactEmail && (
+                    <div className="flex items-center gap-2">
+                      <EnvelopeIcon className="w-4 h-4 shrink-0" />
+                      <span>{job.enterprise.contactEmail}</span>
+                    </div>
+                  )}
+                  {job.enterprise.contactPhone && (
+                    <div className="flex items-center gap-2">
+                      <PhoneIcon className="w-4 h-4 shrink-0" />
+                      <span>{job.enterprise.contactPhone}</span>
+                    </div>
+                  )}
+                  {job.enterprise.size && (
+                    <div className="flex items-center gap-2">
+                      <BuildingOfficeIcon className="w-4 h-4 shrink-0" />
+                      <span>规模：{job.enterprise.size}</span>
+                    </div>
+                  )}
+                  {job.enterprise.user?.creditScore != null && (
+                    <div className="flex items-center gap-2">
+                      <ShieldCheckIcon className={`w-4 h-4 shrink-0 ${
+                        job.enterprise.user.creditScore >= 80 ? 'text-green-500' :
+                        job.enterprise.user.creditScore >= 60 ? 'text-yellow-500' : 'text-red-500'
+                      }`} />
+                      <span>信用分：{job.enterprise.user.creditScore}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

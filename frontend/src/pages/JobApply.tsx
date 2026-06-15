@@ -189,24 +189,26 @@ export default function JobApply() {
               )}
             </div>
 
-            {/* 上传新简历 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                或上传新简历
-              </label>
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <PaperClipIcon className="w-6 h-6 text-gray-400" />
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {resumeFile ? resumeFile.name : '选择 PDF/DOC/DOCX 文件'}
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={e => setResumeFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-              </label>
-            </div>
+            {/* 上传新简历：有可选简历时默认隐藏，避免用户困惑 */}
+            {resumes.length === 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  上传新简历
+                </label>
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <PaperClipIcon className="w-6 h-6 text-gray-400" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {resumeFile ? resumeFile.name : '选择 PDF/DOC/DOCX 文件'}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={e => setResumeFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
 
             {/* 求职信 */}
             <div>

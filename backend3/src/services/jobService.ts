@@ -178,12 +178,18 @@ export async function getJobById(jobId: string) {
           name: true,
           logo: true,
           description: true,
+          website: true,
           industry: true,
           size: true,
           location: true,
           contactEmail: true,
           contactPhone: true,
-          userId: true
+          userId: true,
+          user: {
+            select: {
+              creditScore: true
+            }
+          }
         }
       },
       hrAccount: {
