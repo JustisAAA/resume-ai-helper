@@ -40,11 +40,12 @@ export default function HRResumeDetail() {
 
   const handleAiAnalyze = async (config: any) => {
     if (!applicationId) return;
+    // 立即关闭弹窗，给用户即时反馈
+    setShowScoring(false);
     setAnalyzing(true);
     try {
       const r = await hrAPI.aiAnalyze(applicationId, config);
       setAiAnalysis(r.data.analysis);
-      setShowScoring(false);
     } catch (e: any) { showToast(e.response?.data?.error || 'AI分析失败', 'error'); }
     finally { setAnalyzing(false); }
   };

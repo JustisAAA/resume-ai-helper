@@ -1,5 +1,5 @@
 import { getPrisma } from '../index';
-import { InterviewStatus, Difficulty, Language, AIRole } from '@prisma/client';
+import { InterviewStatus, InterviewType, Difficulty, Language, AIRole } from '@prisma/client';
 
 /**
  * 创建面试邀请
@@ -41,8 +41,10 @@ export async function createInterview(enterpriseId: string, applicationId: strin
     data: {
       userId: application.user.id,
       resumeId: application.resume.id,
+      applicationId: application.id,
       title: `面试 - ${application.user.name} - ${application.job.title}`,
       position: application.job.title,
+      type: InterviewType.ENTERPRISE,
       difficulty: Difficulty.MEDIUM,
       language: Language.ZH_CN,
       aiRole: AIRole.PROFESSIONAL,
