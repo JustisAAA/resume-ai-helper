@@ -109,15 +109,45 @@ export default function EnterpriseProfileEdit() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setError('Logo图片不能超过2MB');
-        return;
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Logo图片不能超过2MB');
+      return;
+    }
+
+    // 立即显示本地预览
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+    setError('');
+    setSuccess('');
+
+    // 自动上传 Logo
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      const res = await fetch(`${getApiBaseUrl()}/api/enterprise/profile`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Logo上传失败');
+
+      // 上传成功后，用服务器返回的 logo 更新预览（支持 base64 data URL）
+      if (data.enterprise?.logo) {
+        setLogoPreview(data.enterprise.logo);
       }
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
+      setSuccess('Logo更新成功！');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Logo上传失败');
     }
   };
 
