@@ -118,6 +118,10 @@ const EnterpriseInterviewReport: React.FC = () => {
           const interviewData = await res.json();
           if (res.ok) {
             setInterview(interviewData);
+            // 检查是否已有 AI 评估数据（存储在 feedback.enterpriseEvaluation）
+            if (interviewData.feedback?.enterpriseEvaluation) {
+              setEvaluation(interviewData.feedback.enterpriseEvaluation);
+            }
           }
         } catch {
           // 面试基本信息加载失败也没关系，按钮仍可正常工作
@@ -149,14 +153,8 @@ const EnterpriseInterviewReport: React.FC = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'AI评估失败');
       setEvaluation(data.evaluation);
-      // 重新加载获取最新数据
-      if (isHrView) {
-        const reloadRes = await hrAPI.getInterviewReport(interviewId);
-        if (reloadRes.data?.data) setInterview(reloadRes.data.data);
-      } else {
-        const reloadRes = await enterpriseAPI.getReport(interviewId);
-        if (reloadRes.data) setInterview(reloadRes.data);
-      }
+      // AI评估数据存储在 feedback.enterpriseEvaluation，
+      // 不需要重新请求报告（reportId 仍然为 null）
     } catch (err: any) {
       showToast(err.message || 'AI评估失败', 'error');
     } finally {
