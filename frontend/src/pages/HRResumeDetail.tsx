@@ -76,9 +76,9 @@ export default function HRResumeDetail() {
             <span className="font-bold text-gray-900 dark:text-white">简历详情</span>
             {application?.status && (
               <span className={`px-2 py-0.5 text-xs rounded-full border ${
-                application.status === 'ACCEPTED' ? 'bg-green-50 text-green-700 border-green-200' :
-                application.status === 'REJECTED' ? 'bg-red-50 text-red-700 border-red-200' :
-                'bg-yellow-50 text-yellow-700 border-yellow-200'
+                application.status === 'ACCEPTED' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' :
+                application.status === 'REJECTED' ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' :
+                'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
               }`}>
                 {application.status === 'PENDING' ? '待筛选' : application.status === 'ACCEPTED' ? '已通过' : application.status === 'REJECTED' ? '已拒绝' : application.status}
               </span>
@@ -107,14 +107,14 @@ export default function HRResumeDetail() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                       <span className={`text-2xl font-bold ${getScoreColor(aiAnalysis.totalScore)}`}>{aiAnalysis.totalScore}</span>
-                      <span className="block text-[10px] text-gray-400">/100分</span>
+                      <span className="block text-[10px] text-gray-400 dark:text-gray-300">/100分</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl font-bold text-gray-900 dark:text-white">综合评分</span>
-                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${aiAnalysis.passed ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${aiAnalysis.passed ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'}`}>
                       {aiAnalysis.verdict} · {aiAnalysis.passed ? '建议通过' : '建议不通过'}
                     </span>
                   </div>
@@ -124,12 +124,12 @@ export default function HRResumeDetail() {
             </div>
             {aiAnalysis.scoringPoints?.length > 0 && (
               <div className="p-6 border-b border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">📊 各得分点评分</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-white mb-4">📊 各得分点评分</h3>
                 <div className="space-y-3">
                   {aiAnalysis.scoringPoints.map((p: any, i: number) => (
                     <div key={i} className="flex items-center gap-3">
-                      <span className="w-28 shrink-0 text-sm text-gray-700 font-medium">{p.name}</span>
-                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <span className="w-28 shrink-0 text-sm text-gray-700 dark:text-gray-200 font-medium">{p.name}</span>
+                      <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${getScoreBg(p.score)}`} style={{ width: `${p.score}%` }} />
                       </div>
                       <span className={`w-8 text-right text-sm font-bold ${getScoreColor(p.score)}`}>{p.score}</span>
@@ -138,23 +138,23 @@ export default function HRResumeDetail() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 divide-x divide-gray-100">
+            <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700">
               {aiAnalysis.strengths?.length > 0 && (
                 <div className="p-6">
-                  <h3 className="text-sm font-semibold text-green-700 mb-3">✅ 优势</h3>
-                  <ul className="space-y-1.5">{aiAnalysis.strengths.map((s: string, i: number) => <li key={i} className="text-sm text-gray-600">• {s}</li>)}</ul>
+                  <h3 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-3">✅ 优势</h3>
+                  <ul className="space-y-1.5">{aiAnalysis.strengths.map((s: string, i: number) => <li key={i} className="text-sm text-gray-600 dark:text-gray-300">• {s}</li>)}</ul>
                 </div>
               )}
               {aiAnalysis.weaknesses?.length > 0 && (
                 <div className="p-6">
-                  <h3 className="text-sm font-semibold text-red-700 mb-3">⚠️ 不足</h3>
-                  <ul className="space-y-1.5">{aiAnalysis.weaknesses.map((w: string, i: number) => <li key={i} className="text-sm text-gray-600">• {w}</li>)}</ul>
+                  <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-3">⚠️ 不足</h3>
+                  <ul className="space-y-1.5">{aiAnalysis.weaknesses.map((w: string, i: number) => <li key={i} className="text-sm text-gray-600 dark:text-gray-300">• {w}</li>)}</ul>
                 </div>
               )}
             </div>
             {aiAnalysis.scoringConfig && (
-              <div className="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100">
-                <h3 className="text-xs font-semibold text-gray-500 mb-2">📋 评分标准：及格{aiAnalysis.scoringConfig.passScore}分 / 优秀{aiAnalysis.scoringConfig.excellentScore}分 / {aiAnalysis.scoringConfig.scoringPoints?.join('、')}</h3>
+              <div className="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">📋 评分标准：及格{aiAnalysis.scoringConfig.passScore}分 / 优秀{aiAnalysis.scoringConfig.excellentScore}分 / {aiAnalysis.scoringConfig.scoringPoints?.join('、')}</h3>
               </div>
             )}
           </div>
@@ -249,12 +249,12 @@ export default function HRResumeDetail() {
               </>
             )}
             {application?.status === 'ACCEPTED' && (
-              <span className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-green-700 bg-green-50 rounded-xl border border-green-200">
+              <span className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
                 <ShieldCheckIcon className="w-4 h-4" />已通过 · 可安排面试
               </span>
             )}
             {application?.status === 'REJECTED' && (
-              <span className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 rounded-xl border border-red-200">
+              <span className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
                 <XCircleIcon className="w-4 h-4" />已拒绝
               </span>
             )}
