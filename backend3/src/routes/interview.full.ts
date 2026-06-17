@@ -89,6 +89,29 @@ router.post('/:id/start', aiLimiter, authenticateToken, requireUser, async (req:
       ? (existingFeedback.interviewConfig || questionsData.config || {})
       : null;
 
+    // 如果有自定义面试题，直接用第一道题开场，不走 AI 生成
+    const customQuestions = enterpriseConfig?.customQuestions || [];
+    if (isEnterprise && customQuestions.length > 0) {
+      const firstQuestion = customQuestions[0];
+      const existingFb = (interview.feedback as any) || {};
+      const updatedInterview = await getPrisma().interview.update({
+        where: { id },
+        data: {
+          status: 'IN_PROGRESS',
+          startedAt: new Date(),
+          questions: [firstQuestion],
+          answers: [],
+          feedback: { ...existingFb, interviewConfig: enterpriseConfig },
+          messages: []
+        }
+      });
+      return res.json({
+        message: '面试开始（预设题目）',
+        interview: updatedInterview,
+        firstQuestion: firstQuestion
+      });
+    }
+
     // 企业面试使用企业智能体，练习面试使用求职者智能体
     const appid = isEnterprise ? process.env.YUANQI_ENTERPRISE_APPID : process.env.YUANQI_APPID;
     const appkey = isEnterprise ? process.env.YUANQI_ENTERPRISE_APPKEY : process.env.YUANQI_APPKEY;
