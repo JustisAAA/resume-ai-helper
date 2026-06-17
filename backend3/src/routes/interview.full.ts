@@ -83,8 +83,11 @@ router.post('/:id/start', aiLimiter, authenticateToken, requireUser, async (req:
     
     // 检测是否为企业面试
     const isEnterprise = (interview as any).type === 'ENTERPRISE';
+    const existingFeedback = (interview.feedback as any) || {};
     const questionsData = (interview.questions as any) || {};
-    const enterpriseConfig = isEnterprise ? (questionsData.config || {}) : null;
+    const enterpriseConfig = isEnterprise
+      ? (existingFeedback.interviewConfig || questionsData.config || {})
+      : null;
 
     // 企业面试使用企业智能体，练习面试使用求职者智能体
     const appid = isEnterprise ? process.env.YUANQI_ENTERPRISE_APPID : process.env.YUANQI_APPID;
@@ -179,7 +182,7 @@ ${resumeText.substring(0, 4000)}
     
     // 更新面试状态
     // 企业面试：把原始配置备份到 feedback，因为 questions 会被覆盖为字符串数组
-    const feedbackData = isEnterprise && enterpriseConfig ? { interviewConfig: enterpriseConfig } : {};
+    const feedbackData = isEnterprise && enterpriseConfig ? { ...(interview.feedback as any || {}), interviewConfig: enterpriseConfig } : {};
 
     const updatedInterview = await getPrisma().interview.update({
       where: { id },

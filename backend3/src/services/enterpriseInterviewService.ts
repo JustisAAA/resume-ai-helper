@@ -7,7 +7,7 @@ import { InterviewStatus, InterviewType, Difficulty, Language, AIRole } from '@p
  * @param applicationId 申请ID
  * @returns 创建的面试
  */
-export async function createInterview(enterpriseId: string, applicationId: string) {
+export async function createInterview(enterpriseId: string, applicationId: string, interviewConfig?: any) {
   // 验证申请是否存在且属于当前企业的职位
   const application = await getPrisma().application.findUnique({
     where: { id: applicationId },
@@ -37,6 +37,7 @@ export async function createInterview(enterpriseId: string, applicationId: strin
   }
 
   // 创建面试
+  const feedbackData = interviewConfig ? { interviewConfig } : {};
   const interview = await getPrisma().interview.create({
     data: {
       userId: application.user.id,
@@ -45,10 +46,11 @@ export async function createInterview(enterpriseId: string, applicationId: strin
       title: `面试 - ${application.user.name} - ${application.job.title}`,
       position: application.job.title,
       type: InterviewType.ENTERPRISE,
-      difficulty: Difficulty.MEDIUM,
+      difficulty: interviewConfig?.difficulty || Difficulty.MEDIUM,
       language: Language.ZH_CN,
       aiRole: AIRole.PROFESSIONAL,
       questions: [],
+      feedback: feedbackData,
       status: InterviewStatus.CREATED
     }
   });

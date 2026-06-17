@@ -231,10 +231,10 @@ export default function EnterpriseInterviewRoom() {
       const res = await interviewAPI.getDetail(token!, id!)
       setInterview(res)
 
-      const qConfig = (res as any).questions
-      if (qConfig && typeof qConfig === 'object' && !Array.isArray(qConfig) && qConfig.config) {
-        if (qConfig.config.questionCount) setTotalQuestions(qConfig.config.questionCount)
-        if (qConfig.config.perQuestionTimeLimit) setPerQuestionTimeLimit(qConfig.config.perQuestionTimeLimit)
+      const feedback = (res as any).feedback
+      if (feedback?.interviewConfig?.questionCount) {
+        setTotalQuestions(feedback.interviewConfig.questionCount)
+        if (feedback.interviewConfig.perQuestionTimeLimit) setPerQuestionTimeLimit(feedback.interviewConfig.perQuestionTimeLimit)
       }
 
       if (res.status === 'CREATED') {

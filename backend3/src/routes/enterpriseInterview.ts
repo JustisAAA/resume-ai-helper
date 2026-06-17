@@ -19,7 +19,7 @@ router.post('/', authenticateToken, requireEnterpriseOrHR, async (req: AuthReque
   try {
     const userId = req.user!.userId;
     const userRole = req.user!.role;
-    const { applicationId } = req.body;
+    const { applicationId, interviewConfig } = req.body;
 
     // 参数校验
     if (!applicationId) {
@@ -51,7 +51,7 @@ router.post('/', authenticateToken, requireEnterpriseOrHR, async (req: AuthReque
     }
 
     // 创建面试
-    const interview = await createInterview(enterpriseId, applicationId);
+    const interview = await createInterview(enterpriseId, applicationId, interviewConfig);
 
     // 生成面试链接（前端路由：/interviews/:id/enterprise-room）
     const interviewLink = `${req.protocol}://${req.get('host')}/interviews/${interview.id}/enterprise-room`;
