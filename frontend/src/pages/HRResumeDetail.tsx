@@ -11,8 +11,9 @@ import {
   ArrowLeftIcon,
   DocumentTextIcon, SparklesIcon, DocumentMagnifyingGlassIcon,
   CheckCircleIcon, XCircleIcon, ArrowDownTrayIcon, ShieldCheckIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon, PlayCircleIcon
 } from '@heroicons/react/24/outline';
+import InterviewConfigModal, { InterviewConfig } from '../components/InterviewConfigModal';
 
 export default function HRResumeDetail() {
   const { applicationId } = useParams<{ applicationId: string }>();
@@ -26,6 +27,7 @@ export default function HRResumeDetail() {
   const [showScoring, setShowScoring] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [interviewApp, setInterviewApp] = useState<any>(null);
 
   useEffect(() => {
     if (applicationId) {
@@ -58,6 +60,17 @@ export default function HRResumeDetail() {
       setApplication((p: any) => ({ ...p, status }));
     } catch (e: any) { showToast(e.response?.data?.error || '操作失败', 'error'); }
     finally { setStatusUpdating(false); }
+  };
+
+  const handleSendInterview = async (config: InterviewConfig) => {
+    if (!applicationId) return;
+    try {
+      const res = await hrAPI.createInterview(applicationId, config);
+      showToast(res.data.message || '面试邀请已发送！', 'success');
+      setInterviewApp(null);
+    } catch (err: any) {
+      showToast(err.response?.data?.error || '发送失败', 'error');
+    }
   };
 
   const getScoreColor = (s: number) => s >= 85 ? 'text-brand-500' : s >= 70 ? 'text-yellow-500' : 'text-red-500';
@@ -249,9 +262,11 @@ export default function HRResumeDetail() {
               </>
             )}
             {application?.status === 'ACCEPTED' && (
-              <span className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                <ShieldCheckIcon className="w-4 h-4" />已通过 · 可安排面试
-              </span>
+              <button onClick={() => setInterviewApp(application)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-brand-500 to-brand-600 rounded-xl hover:from-brand-600 hover:to-brand-700 shadow-sm hover:shadow-md transition-all"
+                title="AI面试">
+                <PlayCircleIcon className="w-4 h-4" />AI面试
+              </button>
             )}
             {application?.status === 'REJECTED' && (
               <span className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
@@ -263,6 +278,14 @@ export default function HRResumeDetail() {
       </main>
 
       {showScoring && <ScoringConfigModal onConfirm={handleAiAnalyze} onCancel={() => setShowScoring(false)} />}
+      {interviewApp && (
+        <InterviewConfigModal
+          title="发送AI面试邀请"
+          jobTitle={interviewApp.job?.title}
+          onConfirm={handleSendInterview}
+          onCancel={() => setInterviewApp(null)}
+        />
+      )}
     </div>
   );
 }
