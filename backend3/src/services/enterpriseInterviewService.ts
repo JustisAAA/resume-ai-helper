@@ -146,3 +146,41 @@ export async function getInterviewReport(interviewId: string, enterpriseId: stri
 
   return interview.report;
 }
+
+/**
+ * 获取面试详情（企业/HR查看）
+ * 返回面试的 questions、answers、feedback(含enterpriseEvaluation)、user 等信息
+ * @param interviewId 面试ID
+ * @param enterpriseId 企业ID
+ */
+export async function getEnterpriseInterviewDetail(interviewId: string, enterpriseId: string) {
+  const interview = await getPrisma().interview.findUnique({
+    where: { id: interviewId },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true }
+      },
+      resume: {
+        select: { id: true, title: true }
+      }
+    }
+  });
+
+  if (!interview) {
+    throw new Error('面试不存在');
+  }
+
+  // 验证企业权限
+  const application = await getPrisma().application.findFirst({
+    where: {
+      userId: interview.userId,
+      job: { enterpriseId }
+    }
+  });
+
+  if (!application) {
+    throw new Error('权限不足');
+  }
+
+  return interview;
+}

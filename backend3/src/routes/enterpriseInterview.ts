@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createInterview, getEnterpriseInterviews, getInterviewReport } from '../services/enterpriseInterviewService';
+import { createInterview, getEnterpriseInterviews, getInterviewReport, getEnterpriseInterviewDetail } from '../services/enterpriseInterviewService';
 import { authenticateToken, requireEnterprise, requireEnterpriseOrHR, AuthRequest } from '../middleware/auth';
 import { sanitizeError } from '../utils/sanitize';
 import { getPrisma } from '../index';
@@ -120,6 +120,52 @@ router.get('/', authenticateToken, requireEnterpriseOrHR, async (req: AuthReques
   } catch (error: any) {
     console.error('获取面试列表错误:', sanitizeError(error));
     res.status(500).json({ error: error.message || '获取面试列表失败' });
+  }
+});
+
+/**
+ * 获取面试详情（含 questions/answers/feedback）
+ * GET /api/enterprise/interviews/:id
+ * 
+ * 权限：企业或HR
+ */
+router.get('/:id', authenticateToken, requireEnterpriseOrHR, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
+    const { id } = req.params;
+
+    let enterpriseId: string;
+
+    if (userRole === 'HR') {
+      const hrAccount = await getPrisma().hRAccount.findUnique({
+        where: { userId },
+        select: { enterpriseId: true }
+      });
+      if (!hrAccount) {
+        return res.status(404).json({ error: 'HR信息不存在' });
+      }
+      enterpriseId = hrAccount.enterpriseId;
+    } else {
+      const enterprise = await getPrisma().enterprise.findUnique({
+        where: { userId }
+      });
+      if (!enterprise) {
+        return res.status(404).json({ error: '企业信息不存在' });
+      }
+      enterpriseId = enterprise.id;
+    }
+
+    const interview = await getEnterpriseInterviewDetail(id, enterpriseId);
+    res.json({ interview });
+  } catch (error: any) {
+    console.error('获取面试详情错误:', sanitizeError(error));
+    if (error.message === '面试不存在') {
+      return res.status(404).json({ error: error.message });
+    } else if (error.message.includes('权限不足')) {
+      return res.status(403).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message || '获取面试详情失败' });
   }
 });
 

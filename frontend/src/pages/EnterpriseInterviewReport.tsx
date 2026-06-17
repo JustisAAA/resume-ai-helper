@@ -90,7 +90,7 @@ const EnterpriseInterviewReport: React.FC = () => {
       let data: any;
       if (isHrView) {
         const res = await hrAPI.getInterviewReport(id);
-        data = res.data.data; // hrAPI 返回 axios 响应，res.data.data 是报告数据
+        data = res.data.report; // hrAPI 返回 { message, report }，所以取 res.data.report
       } else {
         const res = await enterpriseAPI.getReport(id);
         data = res.data; // enterpriseAPI.getReport 直接返回 res.data
@@ -107,16 +107,17 @@ const EnterpriseInterviewReport: React.FC = () => {
       const errMsg = err.response?.data?.error || err.message || '';
       // 后端返回"该面试没有报告"时，显示"开始AI评估"按钮
       if (errMsg.includes('没有报告')) {
-        // 尝试加载面试基本信息（用于按钮上方展示面试信息）
+        // 尝试加载面试基本信息（企业接口，支持 HR/ENTERPRISE 角色）
         try {
           const token = isHrView
             ? localStorage.getItem('hrToken')
             : localStorage.getItem('token');
-          const res = await fetch(`${getApiBaseUrl()}/api/interviews/${id}`, {
+          const res = await fetch(`${getApiBaseUrl()}/api/enterprise/interviews/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          const interviewData = await res.json();
+          const json = await res.json();
           if (res.ok) {
+            const interviewData = json.interview;
             setInterview(interviewData);
             // 检查是否已有 AI 评估数据（存储在 feedback.enterpriseEvaluation）
             if (interviewData.feedback?.enterpriseEvaluation) {
@@ -153,8 +154,16 @@ const EnterpriseInterviewReport: React.FC = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'AI评估失败');
       setEvaluation(data.evaluation);
-      // AI评估数据存储在 feedback.enterpriseEvaluation，
-      // 不需要重新请求报告（reportId 仍然为 null）
+      // AI评估后重新加载面试数据（获取 questions/answers）
+      try {
+        const res2 = await fetch(`${getApiBaseUrl()}/api/enterprise/interviews/${interviewId}`, {
+          headers: { Authorization: `Bearer ${authToken || ''}` }
+        });
+        const json2 = await res2.json();
+        if (res2.ok && json2.interview) {
+          setInterview(json2.interview);
+        }
+      } catch { /* 重载失败不影响评估结果 */ }
     } catch (err: any) {
       showToast(err.message || 'AI评估失败', 'error');
     } finally {
@@ -514,7 +523,7 @@ const EnterpriseInterviewReport: React.FC = () => {
             <div className="text-center pb-4">
               <button onClick={handleAIEvaluate} disabled={evaluating}
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors disabled:opacity-50">
-                {evaluating ? <Loading size="sm" /> : <Loading size="sm" />}重新评估
+                {evaluating ? <Loading size="sm" /> : <SparklesIcon className="w-4 h-4" />}{evaluating ? 'AI评估中...' : '重新评估'}
               </button>
             </div>
           </>
