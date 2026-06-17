@@ -10,7 +10,7 @@ import ErrorAlert from '../components/ErrorAlert';
 import {
   ArrowLeftIcon,
   DocumentTextIcon, SparklesIcon, DocumentMagnifyingGlassIcon,
-  CheckCircleIcon, XCircleIcon, ArrowDownTrayIcon, ShieldCheckIcon,
+  CheckCircleIcon, XCircleIcon, ArrowDownTrayIcon,
   ChatBubbleLeftRightIcon, PlayCircleIcon
 } from '@heroicons/react/24/outline';
 import InterviewConfigModal, { InterviewConfig } from '../components/InterviewConfigModal';
