@@ -1,7 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { enterpriseAPI } from '../services/api';
-import { hrAPI } from '../services/hrAPI';
 import { getApiBaseUrl } from '../utils/api';
 import { exportReportToPDF } from '../utils/exportPdf';
 import { useToast } from '../components/Toast';
@@ -85,51 +83,33 @@ const EnterpriseInterviewReport: React.FC = () => {
   const loadData = async (id: string) => {
     try {
       setLoading(true);
+      setError('');
 
-      // HR视图使用 hrAPI（带hrToken），企业视图使用 enterpriseAPI（带token）
-      let data: any;
-      if (isHrView) {
-        const res = await hrAPI.getInterviewReport(id);
-        data = res.data.report; // hrAPI 返回 { message, report }，所以取 res.data.report
-      } else {
-        const res = await enterpriseAPI.getReport(id);
-        data = res.data; // enterpriseAPI.getReport 直接返回 res.data
+      const token = isHrView
+        ? localStorage.getItem('hrToken')
+        : localStorage.getItem('token');
+
+      // 直接获取面试详情（不再请求 /report，避免不必要的 404）
+      const res = await fetch(`${getApiBaseUrl()}/api/enterprise/interviews/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || '获取面试信息失败');
       }
 
-      if (data) {
-        // data 包含: id, title, position, difficulty, questions, answers, user, resume, evaluation, config, report
-        setInterview(data);
-        if (data.evaluation) {
-          setEvaluation(data.evaluation);
-        }
+      const interviewData = json.interview;
+      setInterview(interviewData);
+
+      // 检查是否已有 AI 评估数据（存储在 feedback.enterpriseEvaluation）
+      if (interviewData.feedback?.enterpriseEvaluation) {
+        setEvaluation(interviewData.feedback.enterpriseEvaluation);
       }
     } catch (err: any) {
-      const errMsg = err.response?.data?.error || err.message || '';
-      // 后端返回"该面试没有报告"时，显示"开始AI评估"按钮
-      if (errMsg.includes('没有报告')) {
-        // 尝试加载面试基本信息（企业接口，支持 HR/ENTERPRISE 角色）
-        try {
-          const token = isHrView
-            ? localStorage.getItem('hrToken')
-            : localStorage.getItem('token');
-          const res = await fetch(`${getApiBaseUrl()}/api/enterprise/interviews/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const json = await res.json();
-          if (res.ok) {
-            const interviewData = json.interview;
-            setInterview(interviewData);
-            // 检查是否已有 AI 评估数据（存储在 feedback.enterpriseEvaluation）
-            if (interviewData.feedback?.enterpriseEvaluation) {
-              setEvaluation(interviewData.feedback.enterpriseEvaluation);
-            }
-          }
-        } catch {
-          // 面试基本信息加载失败也没关系，按钮仍可正常工作
-        }
-        // 不管第二次 fetch 成功与否，都清除错误，显示"开始AI评估"按钮
-        setError('');
-      } else {
+      const errMsg = err.message || '';
+      // 只对非预期的错误显示提示，没有 report 属于正常情况
+      if (!errMsg.includes('没有报告')) {
         setError(errMsg);
       }
     } finally {
