@@ -20,6 +20,7 @@ interface JobDetail {
   status: string;
   images?: string[];
   createdAt: string;
+  applied?: boolean;
   enterprise?: {
     id: string;
     name: string;
@@ -206,12 +207,21 @@ export default function JobDetail() {
           <div className="space-y-6">
             {/* 操作按钮 */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-3">
-              <button
-                onClick={() => navigate(`/jobs/${job.id}/apply`)}
-                className="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors"
-              >
-                立即申请
-              </button>
+              {job.applied ? (
+                <button
+                  disabled
+                  className="w-full py-2.5 px-4 bg-gray-400 dark:bg-gray-600 text-white font-medium rounded-lg cursor-not-allowed"
+                >
+                  已申请
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate(`/jobs/${job.id}/apply`)}
+                  className="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  立即申请
+                </button>
+              )}
               <button
                 onClick={() => {
                   const token = localStorage.getItem('token');

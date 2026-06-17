@@ -1,10 +1,12 @@
 import { Router, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { createJob, getJobs, getJobById, updateJob, deleteJob, updateJobStatus } from '../services/jobService';
 import { authenticateToken, requireEnterprise, AuthRequest } from '../middleware/auth';
 import { JobStatus } from '@prisma/client';
 import { getApplicationsByJobId } from '../services/applicationService';
 import { getPrisma } from '../index';
 import { sanitizeError } from '../utils/sanitize';
+import { JWT_SECRET } from '../config';
 
 const router = Router();
 
@@ -82,12 +84,25 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// 获取职位详情（公开接口）
+// 获取职位详情（公开接口，可选登录：若已登录则返回 applied 标记）
 router.get('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    const job = await getJobById(id);
+    // 可选：尝试解析 token 获取当前用户 ID（不强制登录）
+    let userId: string | undefined;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        userId = decoded.userId;
+      } catch {
+        // token 无效或过期，忽略，视为未登录
+      }
+    }
+
+    const job = await getJobById(id, userId);
     res.json({ job });
   } catch (error: any) {
     console.error('获取职位详情错误:', sanitizeError(error));

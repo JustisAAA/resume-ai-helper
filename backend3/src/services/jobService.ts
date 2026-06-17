@@ -167,8 +167,10 @@ export async function getJobs(
 
 /**
  * 获取职位详情
+ * @param jobId 职位ID
+ * @param userId 可选：当前登录用户ID，用于检查是否已申请
  */
-export async function getJobById(jobId: string) {
+export async function getJobById(jobId: string, userId?: string) {
   const job = await getPrisma().job.findUnique({
     where: { id: jobId },
     include: {
@@ -225,7 +227,16 @@ export async function getJobById(jobId: string) {
     throw new Error('职位不存在');
   }
 
-  return job;
+  // 检查当前用户是否已申请该职位
+  let applied = false;
+  if (userId) {
+    const existing = await getPrisma().application.findFirst({
+      where: { userId, jobId }
+    });
+    applied = !!existing;
+  }
+
+  return { ...job, applied };
 }
 
 /**

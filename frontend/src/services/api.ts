@@ -1060,7 +1060,10 @@ export const jobAPI = {
    * 获取职位详情
    */
   async getDetail(id: string): Promise<{ job: Job }> {
-    const res = await axios.get(getApiUrl(`/jobs/${id}`));
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await axios.get(getApiUrl(`/jobs/${id}`), { headers });
     return res.data;
   },
 
