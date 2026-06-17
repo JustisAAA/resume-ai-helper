@@ -37,6 +37,13 @@ export async function createInterview(enterpriseId: string, applicationId: strin
   }
 
   // 创建面试
+  // 前端传的难度是中文（初级/中级/高级），需要映射成枚举值
+  const DIFFICULTY_MAP: Record<string, Difficulty> = {
+    '初级': Difficulty.EASY,
+    '中级': Difficulty.MEDIUM,
+    '高级': Difficulty.HARD,
+  };
+  const difficulty = DIFFICULTY_MAP[interviewConfig?.difficulty] || Difficulty.MEDIUM;
   const feedbackData = interviewConfig ? { interviewConfig } : {};
   const interview = await getPrisma().interview.create({
     data: {
@@ -46,7 +53,7 @@ export async function createInterview(enterpriseId: string, applicationId: strin
       title: `面试 - ${application.user.name} - ${application.job.title}`,
       position: application.job.title,
       type: InterviewType.ENTERPRISE,
-      difficulty: interviewConfig?.difficulty || Difficulty.MEDIUM,
+      difficulty,
       language: Language.ZH_CN,
       aiRole: AIRole.PROFESSIONAL,
       questions: [],
