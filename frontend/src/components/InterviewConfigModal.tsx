@@ -34,7 +34,6 @@ export default function InterviewConfigModal({
   const [difficulty, setDifficulty] = useState(initialConfig?.difficulty || '中级');
   const [keywords, setKeywords] = useState<string[]>(initialConfig?.keywords || []);
   const [abilities, setAbilities] = useState<string[]>(initialConfig?.abilities || []);
-  const [questions, setQuestions] = useState<string[]>(initialConfig?.questions || []);
   const [questionCount, setQuestionCount] = useState(initialConfig?.questionCount || 5);
   const [perQuestionTimeLimit, setPerQuestionTimeLimit] = useState(initialConfig?.perQuestionTimeLimit || 0);
 
@@ -46,7 +45,6 @@ export default function InterviewConfigModal({
       if (initialConfig.difficulty) setDifficulty(initialConfig.difficulty);
       if (initialConfig.keywords) setKeywords(initialConfig.keywords);
       if (initialConfig.abilities) setAbilities(initialConfig.abilities);
-      if (initialConfig.questions) setQuestions(initialConfig.questions);
       if (initialConfig.questionCount) setQuestionCount(initialConfig.questionCount);
       if (initialConfig.perQuestionTimeLimit !== undefined) setPerQuestionTimeLimit(initialConfig.perQuestionTimeLimit);
     }
@@ -74,7 +72,7 @@ export default function InterviewConfigModal({
       difficulty,
       keywords,
       abilities,
-      questions,
+      questions: [] as string[],
       questionCount,
       perQuestionTimeLimit,
     });
@@ -261,48 +259,6 @@ export default function InterviewConfigModal({
                   </span>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* 具体题目 */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              自定义面试题（选填）
-            </label>
-            <p className="text-xs text-gray-400 mb-2">
-              可预设自定义面试题，AI将从中选取并围绕关键词扩展（最多10道）
-            </p>
-            <div className="space-y-2">
-              {questions.map((q, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 w-5">#{i + 1}</span>
-                  <input
-                    type="text"
-                    value={q}
-                    onChange={(e) => {
-                      const next = [...questions];
-                      next[i] = e.target.value;
-                      setQuestions(next);
-                    }}
-                    placeholder={`面试题 ${i + 1}`}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <button
-                    onClick={() => removeTag(i, questions, setQuestions)}
-                    className="p-2 text-gray-400 hover:text-red-500"
-                  >
-                    <XMarkIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            {questions.length < 10 && (
-              <button
-                onClick={() => setQuestions([...questions, ''])}
-                className="mt-2 flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 font-medium"
-              >
-                <PlusIcon className="w-3.5 h-3.5" /> 添加题目
-              </button>
             )}
           </div>
         </div>
