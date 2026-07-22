@@ -15,14 +15,14 @@ export const loginLimiter = rateLimit({
 });
 
 /**
- * 注册频率限制：15分钟内最多3次
+ * 注册频率限制：1分钟内最多3次
  * 防止恶意批量注册
  */
 export const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
+  windowMs: 1 * 60 * 1000, // 1分钟
   max: 3, // 最多3次请求
   message: {
-    error: '注册尝试次数过多，请15分钟后再试'
+    error: '注册尝试次数过多，请1分钟后再试'
   },
   standardHeaders: true,
   legacyHeaders: false,
