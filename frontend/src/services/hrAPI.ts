@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getApiUrl } from '../utils/api';
 import type { ScoringConfig, InterviewConfig } from './api';
+import { setBanned } from '../utils/bannedEvent';
 
 const API = axios.create({ baseURL: getApiUrl('') });
 
@@ -9,6 +10,16 @@ API.interceptors.request.use((config) => {
   if (token) config.headers!.Authorization = `Bearer ${token}`;
   return config;
 });
+
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403 && error.response?.data?.banned) {
+      setBanned(true);
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const hrAPI = {
   /** HR登录 */

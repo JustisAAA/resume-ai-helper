@@ -37,7 +37,8 @@ export async function createInterview(enterpriseId: string, applicationId: strin
   }
 
   // 创建面试
-  // 前端传的难度是中文（初级/中级/高级），需要映射成枚举值
+  // 前端传的难度是中文（初级/中级/高级），不能直接赋值给 Prisma 枚举
+  // 需要映射成 Difficulty 枚举值：EASY / MEDIUM / HARD
   const DIFFICULTY_MAP: Record<string, Difficulty> = {
     '初级': Difficulty.EASY,
     '中级': Difficulty.MEDIUM,

@@ -38,7 +38,7 @@ export async function authenticateToken(
     }
 
     if (user.status === 'BANNED') {
-      return res.status(403).json({ error: '账号已被封禁，请联系管理员' });
+      return res.status(403).json({ error: '此账号已封禁', banned: true });
     }
 
     req.user = {

@@ -58,6 +58,7 @@ const HRSettings = lazy(() => import('./pages/HRSettings'))
 const HRInterviews = lazy(() => import('./pages/HRInterviews'))
 const MyEnterpriseInterviews = lazy(() => import('./pages/MyEnterpriseInterviews'))
 const EnterpriseInterviewRoom = lazy(() => import('./pages/EnterpriseInterviewRoom'))
+const BannedPage = lazy(() => import('./pages/BannedPage'))
 
 /* ── 路由守卫 ── */
 
@@ -182,6 +183,7 @@ function App() {
 
   return (
     <Suspense fallback={<Loading fullScreen size="lg" text="页面加载中..." />}>
+    <BannedPage />
     <Routes>
       {/* 公开页面 */}
       <Route path="/" element={<Home />} />

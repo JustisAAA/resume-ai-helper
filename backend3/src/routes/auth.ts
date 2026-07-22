@@ -115,6 +115,11 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
       return res.status(401).json({ error: '邮箱或密码错误' });
     }
 
+    // 检查账号是否被封禁
+    if (user.status === 'BANNED') {
+      return res.status(403).json({ error: '此账号已封禁', banned: true });
+    }
+
     // 生成 JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },

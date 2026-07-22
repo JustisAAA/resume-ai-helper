@@ -16,7 +16,9 @@ export async function hrLogin(email: string, password: string) {
     throw new Error('HR账号不存在');
   }
   if (user.status === 'BANNED') {
-    throw new Error('账号已被封禁');
+    const err: any = new Error('此账号已封禁');
+    err.banned = true;
+    throw err;
   }
   if (!user.hrAccount) {
     throw new Error('HR信息不完整');

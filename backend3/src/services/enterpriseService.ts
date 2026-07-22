@@ -155,6 +155,13 @@ export async function loginEnterprise(data: EnterpriseLoginData) {
     throw new Error('该账号不是企业账号');
   }
 
+  // 检查账号是否被封禁
+  if (user.status === 'BANNED') {
+    const err: any = new Error('此账号已封禁');
+    err.banned = true;
+    throw err;
+  }
+
   // 获取企业信息
   const enterprise = await getPrisma().enterprise.findUnique({
     where: { userId: user.id }

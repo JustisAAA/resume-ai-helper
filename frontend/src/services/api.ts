@@ -13,6 +13,18 @@
 
 import axios from 'axios';
 import { getApiUrl } from '../utils/api';
+import { setBanned } from '../utils/bannedEvent';
+
+// 全局 axios 拦截器：检测 403 + banned，自动触发封禁事件
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403 && error.response?.data?.banned) {
+      setBanned(true);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // ==================== 类型定义 ====================
 

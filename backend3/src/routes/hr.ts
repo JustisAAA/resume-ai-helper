@@ -23,6 +23,10 @@ router.post('/login', async (req, res: Response) => {
   } catch (error: any) {
     console.error('HR登录失败:', sanitizeError(error));
     const message = error.message || '登录失败，请稍后重试';
+    // 被封禁的账号返回 403 + banned:true
+    if (error.banned) {
+      return res.status(403).json({ error: message, banned: true });
+    }
     res.status(401).json({ error: message });
   }
 });

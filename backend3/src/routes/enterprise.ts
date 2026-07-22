@@ -87,6 +87,10 @@ router.post('/login', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: any) {
     console.error('企业登录错误:', sanitizeError(error));
+    // 被封禁的账号返回 403 + banned:true
+    if (error.banned) {
+      return res.status(403).json({ error: error.message, banned: true });
+    }
     res.status(401).json({ error: error.message || '企业登录失败' });
   }
 });
