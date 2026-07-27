@@ -1,24 +1,37 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { setBanned, subscribeBanned, isBanned } from '../utils/bannedEvent';
 
 export default function BannedPage() {
   const navigate = useNavigate();
-  const [banned, setBannedState] = useState(true);
+  const location = useLocation();
+
+  // 公开页面（登录、注册等）不需要显示封禁遮罩
+  const publicPaths = ['/login', '/register', '/enterprise/login', '/enterprise/register', '/hr/login'];
+  const isPublicPage = publicPaths.includes(location.pathname);
+
+  const [banned, setBannedState] = useState(false);
 
   useEffect(() => {
+    // 如果在公开页面，自动清除封禁状态
+    if (isPublicPage) {
+      if (isBanned()) setBanned(false);
+      setBannedState(false);
+      return;
+    }
     // 同步初始状态
     setBannedState(isBanned());
     // 订阅变化
     return subscribeBanned(() => setBannedState(isBanned()));
-  }, []);
+  }, [isPublicPage]);
 
   const handleExit = () => {
     setBanned(false);
     navigate('/login');
   };
 
-  if (!banned) return null;
+  // 公开页面或未封禁 → 不显示
+  if (!banned || isPublicPage) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-white dark:bg-gray-900 flex items-center justify-center px-4">
