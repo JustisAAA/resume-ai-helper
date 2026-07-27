@@ -130,6 +130,7 @@ export default function AdminUsers() {
                 <th className="px-4 py-3 text-left">姓名</th>
                 <th className="px-4 py-3 text-left">角色</th>
                 <th className="px-4 py-3 text-left">状态</th>
+                <th className="px-4 py-3 text-left">HR状态</th>
                 <th className="px-4 py-3 text-left">注册时间</th>
                 <th className="px-4 py-3 text-right">操作</th>
               </tr>
@@ -148,6 +149,21 @@ export default function AdminUsers() {
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[u.status] || ''}`}>
                       {statusLabel[u.status] || u.status}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.role === 'HR' ? (
+                      u.hrAccount?.isActive === false ? (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" title={`岗位「${u.hrAccount?.job?.title || ''}」已删除`}>
+                          已停用
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-600 dark:text-gray-400" title={u.hrAccount?.job?.title || ''}>
+                          {u.hrAccount?.job?.title || '未分配岗位'}
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">

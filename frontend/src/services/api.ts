@@ -718,6 +718,13 @@ export interface AdminUser {
     interviews: number;
     reports: number;
   };
+  // HR 子账号状态（只有 role === 'HR' 时有值）
+  hrAccount?: {
+    id: string;
+    isActive: boolean;
+    jobId: string;
+    job: { title: string; status: string };
+  };
 }
 
 export interface AdminUserListResponse {
