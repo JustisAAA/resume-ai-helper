@@ -297,6 +297,16 @@ export async function deleteJob(jobId: string, enterpriseId: string) {
     data: { status: 'DELETED' }
   });
 
+  // 同步停用该岗位绑定的HR账号（岗位都没了，HR不应再能登录操作）
+  const hrAccount = await getPrisma().hRAccount.findUnique({
+    where: { jobId }
+  });
+  if (hrAccount) {
+    await getPrisma().hRAccount.update({
+      where: { id: hrAccount.id },
+      data: { isActive: false }
+    });
+  }
   return { message: '职位已删除' };
 }
 
