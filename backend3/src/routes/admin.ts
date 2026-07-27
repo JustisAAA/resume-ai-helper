@@ -81,16 +81,7 @@ router.get('/users', authenticateToken, requireAdmin, async (req: AuthRequest, r
         where,
         select: {
           id: true, email: true, name: true, role: true, status: true,
-          createdAt: true,
-          // 包含 HR 子账号状态（用于显示 HR 绑定岗位删除后的"已停用"标记）
-          hrAccount: {
-            select: {
-              id: true,
-              isActive: true,
-              jobId: true,
-              job: { select: { title: true, status: true } }
-            }
-          }
+          createdAt: true
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,

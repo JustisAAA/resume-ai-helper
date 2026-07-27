@@ -291,21 +291,18 @@ export async function deleteJob(jobId: string, enterpriseId: string) {
     throw new Error('无权删除该职位');
   }
 
-  // 软删除：仅标记状态，保留关联数据（面试记录、申请等）
+  // 软删除：标记为已删除，保留面试记录和申请等数据
   await getPrisma().job.update({
     where: { id: jobId },
     data: { status: 'DELETED' }
   });
 
-  // 同步停用该岗位绑定的HR账号（岗位都没了，HR不应再能登录操作）
+  // 同步删除该岗位绑定的HR账号（岗位都没了，管这个岗位的HR也没必要存在了）
   const hrAccount = await getPrisma().hRAccount.findUnique({
     where: { jobId }
   });
   if (hrAccount) {
-    await getPrisma().hRAccount.update({
-      where: { id: hrAccount.id },
-      data: { isActive: false }
-    });
+    await getPrisma().user.delete({ where: { id: hrAccount.userId } });
   }
   return { message: '职位已删除' };
 }
