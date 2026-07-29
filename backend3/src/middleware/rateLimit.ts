@@ -1,20 +1,6 @@
 import rateLimit from 'express-rate-limit';
 
 /**
- * 登录频率限制：15分钟内最多5次
- * 防止暴力破解密码
- */
-export const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 5, // 最多5次请求
-  message: {
-    error: '登录尝试次数过多，请15分钟后再试'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-/**
  * AI调用频率限制：每分钟最多20次
  * 防止API被滥用，控制成本
  */

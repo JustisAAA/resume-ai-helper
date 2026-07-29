@@ -5,7 +5,6 @@ import { getPrisma } from '../index';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { loginLimiter } from '../middleware/rateLimit';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { sanitizeError } from '../utils/sanitize';
 import { JWT_SECRET, JWT_EXPIRES_IN } from '../config';
@@ -90,7 +89,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // 用户登录
-router.post('/login', loginLimiter, async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
