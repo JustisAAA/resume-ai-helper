@@ -15,20 +15,6 @@ export const loginLimiter = rateLimit({
 });
 
 /**
- * 注册频率限制：1分钟内最多3次
- * 防止恶意批量注册
- */
-export const registerLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1分钟
-  max: 3, // 最多3次请求
-  message: {
-    error: '注册尝试次数过多，请1分钟后再试'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-/**
  * AI调用频率限制：每分钟最多20次
  * 防止API被滥用，控制成本
  */

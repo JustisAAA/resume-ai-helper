@@ -5,7 +5,7 @@ import { getPrisma } from '../index';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { loginLimiter, registerLimiter } from '../middleware/rateLimit';
+import { loginLimiter } from '../middleware/rateLimit';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { sanitizeError } from '../utils/sanitize';
 import { JWT_SECRET, JWT_EXPIRES_IN } from '../config';
@@ -28,7 +28,7 @@ const avatarStorage = multer.diskStorage({
 const uploadAvatar = multer({ storage: avatarStorage, limits: { fileSize: 2 * 1024 * 1024 } }); // 最大2MB
 
 // 用户注册
-router.post('/register', registerLimiter, async (req: Request, res: Response) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
