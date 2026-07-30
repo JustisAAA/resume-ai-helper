@@ -478,17 +478,25 @@ export default function InterviewReport() {
         @media print {
           @page { margin: 15mm; size: A4; }
           nav, .no-print, button { display: none !important; }
-          .min-h-screen { min-height: auto !important; }
+          .min-h-screen { min-height: auto !important; background: white !important; }
           .bg-gradient-to-br { background: #4f46e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .rounded-3xl, .rounded-2xl { border-radius: 12px !important; box-shadow: none !important; border: 1px solid #e5e7eb !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12pt; line-height: 1.5; }
-          h1, h2, h3 { page-break-after: avoid; }
+          .rounded-3xl, .rounded-2xl { border-radius: 8px !important; box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11pt; line-height: 1.5; color: #1f2937; background: white !important; }
+          h1, h2, h3 { page-break-after: avoid; color: #1e3a8a !important; }
+          /* 允许section内部不换行，但不强制section之间换页 */
           table, figure { page-break-inside: avoid; }
-          #score-hero { page-break-after: always; }
-          #dimension-analysis { page-break-before: always; }
-          #question-reviews { page-break-before: always; }
-          #suggestions { page-break-before: always; }
-          #final-advice { page-break-before: always; }
+          #score-hero { page-break-inside: avoid; margin-bottom: 12px; }
+          #dimension-analysis { page-break-inside: avoid; margin-bottom: 12px; }
+          #question-reviews { page-break-inside: avoid; margin-bottom: 12px; }
+          #suggestions { page-break-inside: avoid; margin-bottom: 12px; }
+          #final-advice { page-break-inside: avoid; }
+          /* 减小大块间距 */
+          .mb-8 { margin-bottom: 12px !important; }
+          .mb-6 { margin-bottom: 10px !important; }
+          .gap-6 { gap: 10px !important; }
+          .gap-8 { gap: 12px !important; }
+          .p-6 { padding: 12px !important; }
+          .p-8 { padding: 14px !important; }
         }
       `}</style>
 
