@@ -288,18 +288,18 @@ export default function ToolsGuide() {
                     <h3 className="font-bold text-gray-900 dark:text-white">技能需求趋势（2024-2026）</h3>
                   </div>
                   <div className="p-6">
-                    <ResponsiveContainer width="100%" height={420}>
-                      <LineChart data={prepareChartData(trendResult.trends || [])} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                    <ResponsiveContainer width="100%" height={460}>
+                      <LineChart data={prepareChartData(trendResult.trends || [])} margin={{ top: 10, right: 30, left: 10, bottom: 30 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="year" tick={{ fontSize: 13 }} />
                         <YAxis domain={[0, 100]} tick={{ fontSize: 13 }} width={40} />
                         <Tooltip
-                          contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                          contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', maxWidth: '300px' }}
                           labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
-                          itemStyle={{ fontSize: '12px' }}
+                          itemStyle={{ fontSize: '12px', whiteSpace: 'normal' }}
                           formatter={(value: any, name: any) => {
-                            const shortName = getShortSkillName(name as string);
-                            return [`${value}分`, shortName];
+                            // Tooltip 显示完整技能名称
+                            return [`${value}分`, name];
                           }}
                         />
                         <Legend
@@ -410,7 +410,7 @@ function renderAdvice(text: string) {
 // ========== 辅助函数：缩短技能名称（用于图表图例和tooltip） ==========
 function getShortSkillName(name: string): string {
   const trimmed = name.trim();
-  const maxLen = 8;
+  const maxLen = 6;
   if (trimmed.length <= maxLen) return trimmed;
 
   // 对常见长名称做特定缩短（支持中英文括号）
