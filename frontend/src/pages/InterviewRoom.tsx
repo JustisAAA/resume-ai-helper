@@ -320,7 +320,7 @@ export default function InterviewRoom() {
       },
       onDone: (result: any) => {
         setSubmitting(false)
-        const { evaluation, nextQuestion } = result
+        const { evaluation, nextQuestion, interview: updatedInterview } = result
 
         // 移除思考指示器，更新为实际评价
         setChatHistory(prev => {
@@ -339,7 +339,10 @@ export default function InterviewRoom() {
           return newHistory
         })
 
-        if (nextQuestion) {
+        // 用后端返回的面试状态判断是否结束（而不是靠nextQuestion是否为空）
+        // 因为AI解析失败时next_question可能为空字符串，但面试可能还没到最后一题
+        const isCompleted = updatedInterview?.status === 'COMPLETED';
+        if (!isCompleted && nextQuestion) {
           setCurrentQuestion(nextQuestion)
           setChatHistory(prev => [...prev, { role: 'interviewer', content: nextQuestion }])
           if (voiceMode) {
