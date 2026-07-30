@@ -64,9 +64,9 @@ export default function InterviewNew() {
   }
 
   const difficultyOptions = [
-    { value: 'EASY', label: '简单', desc: '基础问题，适合初学者', color: 'green' },
-    { value: 'MEDIUM', label: '中等', desc: '标准难度，适合有经验者', color: 'yellow' },
-    { value: 'HARD', label: '困难', desc: '高压面试，适合挑战者', color: 'red' },
+    { value: 'EASY', label: '简单', desc: '基础问题，3道题，适合初学者', color: 'green', count: 3 },
+    { value: 'MEDIUM', label: '中等', desc: '标准难度，5道题，适合有经验者', color: 'yellow', count: 5 },
+    { value: 'HARD', label: '困难', desc: '高压面试，7道题，适合挑战者', color: 'red', count: 7 },
   ] as const
 
   return (
@@ -156,10 +156,10 @@ export default function InterviewNew() {
               <div className="grid grid-cols-3 gap-3">
                 {difficultyOptions.map(opt => {
                   const isSelected = watch('difficulty') === opt.value
-                  const colorMap: Record<string, { border: string; bg: string; ring: string; text: string }> = {
-                    green: { border: 'border-green-400', bg: 'bg-green-50 dark:bg-green-900/30', ring: 'ring-green-200 dark:ring-green-800', text: 'text-green-700 dark:text-green-300' },
-                    yellow: { border: 'border-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/30', ring: 'ring-yellow-200 dark:ring-yellow-800', text: 'text-yellow-700 dark:text-yellow-300' },
-                    red: { border: 'border-red-400', bg: 'bg-red-50 dark:bg-red-900/30', ring: 'ring-red-200 dark:ring-red-800', text: 'text-red-700 dark:text-red-300' },
+                  const colorMap: Record<string, { border: string; bg: string; ring: string; text: string; badge: string }> = {
+                    green: { border: 'border-green-400', bg: 'bg-green-50 dark:bg-green-900/30', ring: 'ring-green-200 dark:ring-green-800', text: 'text-green-700 dark:text-green-300', badge: 'bg-green-100 dark:bg-green-900/50' },
+                    yellow: { border: 'border-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/30', ring: 'ring-yellow-200 dark:ring-yellow-800', text: 'text-yellow-700 dark:text-yellow-300', badge: 'bg-yellow-100 dark:bg-yellow-900/50' },
+                    red: { border: 'border-red-400', bg: 'bg-red-50 dark:bg-red-900/30', ring: 'ring-red-200 dark:ring-red-800', text: 'text-red-700 dark:text-red-300', badge: 'bg-red-100 dark:bg-red-900/50' },
                   }
                   const c = colorMap[opt.color]
                   return (
@@ -174,8 +174,13 @@ export default function InterviewNew() {
                         ${isSelected ? `${c.border} ${c.bg} ring-2 ${c.ring}` : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'}
                       `}
                     >
-                      <div className={`font-bold text-sm mb-1 ${isSelected ? c.text : 'text-gray-900 dark:text-white'}`}>
-                        {opt.label}
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <span className={`font-bold text-sm ${isSelected ? c.text : 'text-gray-900 dark:text-white'}`}>
+                          {opt.label}
+                        </span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${c.badge} ${c.text}`}>
+                          固定{opt.count}题
+                        </span>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{opt.desc}</div>
                     </div>

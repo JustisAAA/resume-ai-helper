@@ -259,9 +259,7 @@ router.post('/:id/answer', aiLimiter, authenticateToken, requireUser, async (req
       const position = interview.position || '通用岗位';
       const followUpCount = (answers as any[]).filter(a => a.type === 'follow_up').length;
       const feedback = (interview.feedback as any) || {};
-      const maxQuestions = (feedback?.interviewConfig?.questionCount)
-        || ((interview.questions as any)?.config?.questionCount)
-        || 10;
+      const maxQuestions = ({ EASY: 3, MEDIUM: 5, HARD: 7 } as const)[interview.difficulty] || 5;
       
       const mockEval = getMockEvaluation(
         answer,
@@ -358,7 +356,7 @@ router.post('/:id/answer', aiLimiter, authenticateToken, requireUser, async (req
 
     const maxQuestions = isEnterprise
       ? (enterpriseConfig?.questionCount || 5)
-      : 10;
+      : ({ EASY: 3, MEDIUM: 5, HARD: 7 } as const)[interview.difficulty] || 5;
 
     const appid = isEnterprise ? process.env.YUANQI_ENTERPRISE_APPID : process.env.YUANQI_APPID;
     const appkey = isEnterprise ? process.env.YUANQI_ENTERPRISE_APPKEY : process.env.YUANQI_APPKEY;
