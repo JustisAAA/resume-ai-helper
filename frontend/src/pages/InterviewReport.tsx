@@ -473,33 +473,6 @@ export default function InterviewReport() {
   // ── 主渲染 ────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900" ref={reportRef}>
-      {/* 打印样式 */}
-      <style>{`
-        @media print {
-          @page { margin: 15mm; size: A4; }
-          nav, .no-print, button { display: none !important; }
-          .min-h-screen { min-height: auto !important; background: white !important; }
-          .bg-gradient-to-br { background: #4f46e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .rounded-3xl, .rounded-2xl { border-radius: 8px !important; box-shadow: none !important; border: 1px solid #e5e7eb !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11pt; line-height: 1.5; color: #1f2937; background: white !important; }
-          h1, h2, h3 { page-break-after: avoid; color: #1e3a8a !important; }
-          /* 允许section内部不换行，但不强制section之间换页 */
-          table, figure { page-break-inside: avoid; }
-          #score-hero { page-break-inside: avoid; margin-bottom: 12px; }
-          #dimension-analysis { page-break-inside: avoid; margin-bottom: 12px; }
-          #question-reviews { page-break-inside: avoid; margin-bottom: 12px; }
-          #suggestions { page-break-inside: avoid; margin-bottom: 12px; }
-          #final-advice { page-break-inside: avoid; }
-          /* 减小大块间距 */
-          .mb-8 { margin-bottom: 12px !important; }
-          .mb-6 { margin-bottom: 10px !important; }
-          .gap-6 { gap: 10px !important; }
-          .gap-8 { gap: 12px !important; }
-          .p-6 { padding: 12px !important; }
-          .p-8 { padding: 14px !important; }
-        }
-      `}</style>
-
       {/* 顶部导航 */}
       <nav className="bg-white dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 no-print">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex justify-between items-center h-16">
@@ -515,10 +488,6 @@ export default function InterviewReport() {
             </button>
             <button onClick={handleCopyReport} className="px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hidden sm:flex items-center gap-1.5">
               复制报告
-            </button>
-            <button onClick={() => window.print()} className="px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hidden sm:flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-4h6m-6 4v1a1 1 0 001 1h4a1 1 0 001-1v-1m-6 0h6" /></svg>
-              打印
             </button>
             <button onClick={handleExportPDF} className="px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hidden sm:flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -695,10 +664,6 @@ export default function InterviewReport() {
           <button onClick={() => navigate('/interviews')} className="px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
             查看所有面试
-          </button>
-          <button onClick={() => window.print()} className="px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-2 sm:hidden">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-4h6m-6 4v1a1 1 0 001 1h4a1 1 0 001-1v-1m-6 0h6" /></svg>
-            打印报告
           </button>
         </div>
       </div>
