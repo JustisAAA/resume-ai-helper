@@ -2,9 +2,7 @@
 import ThemeToggle from '../components/ThemeToggle'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } from 'recharts'
-import { useToast } from '../components/Toast'
 import type { ReportData, InterviewData, QuestionReview as QuestionReviewType, AnswerData } from '../types/report'
-import { exportReportToPDF } from '../utils/exportPdf'
 
 import { useTheme } from '../context/ThemeContext'
 import { interviewAPI } from '../services/api'
@@ -274,10 +272,8 @@ export default function InterviewReport() {
   const [error, setError] = useState('')
   const [progress, setProgress] = useState<{ step: string; percent: number; message: string }>({ step: '', percent: 0, message: '' })
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set())
-  const [isExporting, setIsExporting] = useState(false)
   const reportRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-  const { showToast } = useToast()
 
   // ── 数据获取 ──────────────────────────────────────
   useEffect(() => { fetchInterview() }, [id])
@@ -372,75 +368,7 @@ export default function InterviewReport() {
     [dimensionScores]
   )
 
-  // ── 操作函数 ──────────────────────────────────────
-  const handleCopyReport = async () => {
-    const parts: string[] = []
-    parts.push(`面试报告 — ${interview?.title || ''}`)
-    parts.push(`总分：${overallScore}/100  岗位：${interview?.position || '通用岗位'}`)
-    parts.push(`题目：${answers.length}道  平均：${avgScore.toFixed(1)}/10`)
-    parts.push(``)
-    parts.push(`— 能力维度 —`)
-    radarData.forEach(d => parts.push(`  ${d.dimension}：${d.score}分`))
-    parts.push(``)
-    parts.push(`— 各题回顾 —`)
-    answers.forEach((a, i) => {
-      parts.push(`  Q${i + 1}：${a.question}`)
-      parts.push(`  答：${(a.answer || '').slice(0, 200)}`)
-      parts.push(`  分：${a.score}/10`)
-    })
-    parts.push(``)
-    parts.push(`— 优势 —`)
-    strengths.forEach(s => parts.push(`  ✓ ${s}`))
-    parts.push(``)
-    parts.push(`— 改进 —`)
-    improvements.forEach(imp => parts.push(`  • ${imp}`))
-    if (report?.final_advice) {
-      parts.push(``)
-      parts.push(`— AI建议 —`)
-      parts.push(report.final_advice)
-    }
-    try {
-      await navigator.clipboard.writeText(parts.join('\n'))
-      showToast('报告已复制到剪贴板！', 'success')
-    } catch {
-      showToast('复制失败，请手动复制', 'error')
-    }
-  }
-
-  const handleShareLink = async () => {
-    const url = `${window.location.origin}/interviews/${id}/report`
-    try {
-      await navigator.clipboard.writeText(url)
-      showToast('报告链接已复制，可分享给朋友查看', 'success')
-    } catch {
-      showToast('复制链接失败', 'error')
-    }
-  }
-
-  const handleExportPDF = async () => {
-    if (!report || !interview || isExporting) return;
-    setIsExporting(true);
-    showToast('正在生成 PDF，请稍候...', 'info');
-    
-    try {
-      const reportElement = reportRef.current;
-      if (!reportElement) throw new Error('报告元素未找到');
-      
-      const safeTitle = (interview.title || '面试报告').replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
-      await exportReportToPDF(reportElement, `面试报告_${safeTitle}`, {
-        title: '面试报告',
-      });
-      
-      showToast('PDF 导出成功！', 'success');
-    } catch (error) {
-      console.error('PDF export failed:', error);
-      showToast('PDF 导出失败，请重试', 'error');
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // ── 加载/错误状态 ─────────────────────────────────
+// ── 加载/错误状态 ─────────────────────────────────
   if (loading || generating) {
     return (
       <div className={`min-h-screen flex flex-col items-center justify-center gap-4 ${dark ? 'bg-gray-950' : 'bg-gradient-to-br from-brand-50 via-white to-brand-50'}`}>
@@ -483,16 +411,6 @@ export default function InterviewReport() {
             <h1 className="text-lg font-bold text-gray-900 dark:text-white">面试报告</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleShareLink} className="px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hidden sm:flex items-center gap-1.5">
-              分享链接
-            </button>
-            <button onClick={handleCopyReport} className="px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hidden sm:flex items-center gap-1.5">
-              复制报告
-            </button>
-            <button onClick={handleExportPDF} className="px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hidden sm:flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              导出PDF
-            </button>
             <button onClick={() => navigate('/interviews/new')} className="px-4 py-2 text-sm rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors font-medium">
               再来一场
             </button>
