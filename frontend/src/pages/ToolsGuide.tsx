@@ -7,6 +7,7 @@ import { exportTextToPdf } from '../utils/exportPdf'
 import { toolsAPI } from '../services/api'
 import { ButtonSpinner } from '../components/Loading'
 import EmptyState from '../components/EmptyState'
+import Markdown from '../components/Markdown'
 
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -181,7 +182,9 @@ export default function ToolsGuide() {
                     <h3 className="font-bold text-gray-900 dark:text-white">求职攻略详情</h3>
                   </div>
                   <div className="p-6">
-                    <pre className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600 leading-relaxed whitespace-pre-wrap font-sans">{guideResult.guide || <EmptyState size="sm" title="暂无内容" />}</pre>
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                    {guideResult.guide ? <Markdown content={guideResult.guide} /> : <EmptyState size="sm" title="暂无内容" />}
+                  </div>
                   </div>
                 </div>
               </div>
