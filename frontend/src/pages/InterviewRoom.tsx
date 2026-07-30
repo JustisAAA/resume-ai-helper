@@ -379,10 +379,10 @@ export default function InterviewRoom() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // 计算进度：基于 chatHistory 中的面试官消息数作为总题数
-  // 每生成一个新问题（包括当前显示的），totalQuestions 就 +1
+  // 总题数：根据面试难度固定（简单3/中等5/困难7）
+  const DIFFICULTY_TOTAL: Record<string, number> = { EASY: 3, MEDIUM: 5, HARD: 7 };
+  const totalQuestions = DIFFICULTY_TOTAL[interview?.difficulty || 'MEDIUM'] || 5;
   const answeredCount = chatHistory.filter(m => m.role === 'candidate').length
-  const totalQuestions = Math.max(chatHistory.filter(m => m.role === 'interviewer').length, 1)
   const progressPercent = totalQuestions > 0 ? Math.min(Math.round((answeredCount / totalQuestions) * 100), 100) : 0
 
   // 实时提示：根据当前问题生成上下文相关提示
