@@ -162,8 +162,8 @@ export default function TemplateApply() {
                   {/* 简历信息 */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white truncate" title={r.filename}>
-                        {r.filename || '未命名简历'}
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate" title={r.fileName}>
+                        {r.fileName || '未命名简历'}
                       </h3>
                       <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
                         r.status === 'ANALYZED'

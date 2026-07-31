@@ -113,7 +113,7 @@ export default function ResumeList() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">{resume.filename}</h3>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">{resume.fileName}</h3>
                         <StatusBadge status={resume.status} type="resume" />
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">

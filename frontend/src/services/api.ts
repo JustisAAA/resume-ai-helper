@@ -60,13 +60,13 @@ export interface UserProfile {
 
 export interface Resume {
   id: string;
-  filename: string;
-  originalName: string;
+  fileName: string;
+  originalName?: string;
   status: 'DRAFT' | 'ANALYZED' | 'ARCHIVED';
   score?: number;
   uploader?: {
     id: string;
-    name: string;
+    name?: string;
     email: string;
   };
   createdAt: string;
