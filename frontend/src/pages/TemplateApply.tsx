@@ -143,20 +143,52 @@ export default function TemplateApply() {
                 onClick={() => setSelectedId(r.id)}
                 className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
                   selectedId === r.id
-                    ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-900/30'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-brand-200'
+                    ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-900/30 shadow-md'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-brand-200 hover:shadow-sm'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{r.filename}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      状态：{r.status === 'ANALYZED' ? '已分析' : '草稿'}
-                      · 更新于 {new Date(r.updatedAt).toLocaleDateString()}
-                    </p>
+                <div className="flex items-start gap-4">
+                  {/* 简历图标 */}
+                  <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                    r.status === 'ANALYZED'
+                      ? 'bg-gradient-to-br from-emerald-500 to-emerald-600'
+                      : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                  }`}>
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </div>
+
+                  {/* 简历信息 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate" title={r.filename}>
+                        {r.filename || '未命名简历'}
+                      </h3>
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        r.status === 'ANALYZED'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                        {r.status === 'ANALYZED' ? '已分析' : '草稿'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                      {r.score !== undefined && r.score !== null && (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span className="font-medium text-amber-600 dark:text-amber-400">{r.score}分</span>
+                        </span>
+                      )}
+                      <span>更新于 {new Date(r.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  {/* 选中图标 */}
                   {selectedId === r.id && (
-                    <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center">
+                    <div className="shrink-0 w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
