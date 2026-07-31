@@ -60,7 +60,8 @@ export interface UserProfile {
 
 export interface Resume {
   id: string;
-  fileName: string;
+  title: string;
+  fileName?: string;
   originalName?: string;
   status: 'DRAFT' | 'ANALYZED' | 'ARCHIVED';
   score?: number;

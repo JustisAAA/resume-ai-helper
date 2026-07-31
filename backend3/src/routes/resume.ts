@@ -92,25 +92,13 @@ router.post('/upload', authenticateToken, requireUser, upload.single('file'), as
       rawText = '[解析失败] ' + parseError.message;
     }
 
-    // 创建简历记录
+    // 创建简历记录（title 为用户自定义标题，fileName 为原始文件名）
     const fixedName = fixFilename(file.originalname);
-
-    // 同名检测：如果用户已有同名简历，自动追加序号（如 "张三.docx" → "张三 (2).docx"）
-    const baseName = fixedName.replace(/\.[^.]+$/, ''); // 去掉扩展名
-    const ext = path.extname(fixedName);
-    const sameCount = await getPrisma().resume.count({
-      where: {
-        userId,
-        fileName: { startsWith: baseName }
-      }
-    });
-    const uniqueName = sameCount > 0 ? `${baseName} (${sameCount + 1})${ext}` : fixedName;
-
     const resume = await getPrisma().resume.create({
       data: {
         userId,
-        title: title || uniqueName,
-        fileName: uniqueName,
+        title: title || fixedName,
+        fileName: fixedName,
         fileUrl: `/uploads/${file.filename}`,
         fileType: fileType.replace('.', ''),
         rawText,
