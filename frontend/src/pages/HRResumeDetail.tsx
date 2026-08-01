@@ -197,18 +197,43 @@ export default function HRResumeDetail() {
             </h2>
           </div>
           <div className="p-6">
-            {resume.content ? (
-              <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-80 overflow-y-auto leading-relaxed">
-                {typeof resume.content === 'string' ? resume.content : JSON.stringify(resume.content, null, 2)}
-              </div>
-            ) : resume.rawText ? (
-              <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-80 overflow-y-auto leading-relaxed">{resume.rawText}</div>
-            ) : (
-              <div className="flex flex-col items-center py-8 text-center">
-                <DocumentTextIcon className="w-10 h-10 text-gray-300 mb-2" />
-                <p className="text-sm text-gray-400">暂无简历文本内容</p>
-              </div>
-            )}
+            {(() => {
+              // 智能检测：如果简历内容是模板生成的HTML，用浏览器渲染出来
+              const contentObj = typeof resume.content === 'object' && resume.content !== null ? resume.content : null;
+              const htmlCandidate = contentObj?.html || (typeof resume.content === 'string' && resume.content.trim().toLowerCase().startsWith('<') ? resume.content : '') || (typeof resume.rawText === 'string' && resume.rawText.trim().toLowerCase().startsWith('<html') ? resume.rawText : '');
+              const isHtml = typeof htmlCandidate === 'string' && htmlCandidate.length > 0 && /<html|<body|<div|<section/i.test(htmlCandidate);
+
+              if (isHtml) {
+                return (
+                  <iframe
+                    srcDoc={htmlCandidate}
+                    className="w-full h-[500px] border rounded-xl bg-white"
+                    title="简历模板预览"
+                  />
+                );
+              }
+
+              if (resume.content) {
+                return (
+                  <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-80 overflow-y-auto leading-relaxed">
+                    {typeof resume.content === 'string' ? resume.content : JSON.stringify(resume.content, null, 2)}
+                  </div>
+                );
+              }
+
+              if (resume.rawText) {
+                return (
+                  <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-80 overflow-y-auto leading-relaxed">{resume.rawText}</div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col items-center py-8 text-center">
+                  <DocumentTextIcon className="w-10 h-10 text-gray-300 mb-2" />
+                  <p className="text-sm text-gray-400">暂无简历文本内容</p>
+                </div>
+              );
+            })()}
             {/* 下载按钮 */}
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-center gap-3">
               {resume.fileUrl ? (
