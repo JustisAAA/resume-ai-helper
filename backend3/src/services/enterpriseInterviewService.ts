@@ -83,17 +83,17 @@ export async function getEnterpriseInterviews(enterpriseId: string, jobId?: stri
 
   const jobIds = jobs.map(j => j.id);
 
-  // 获取这些职位的所有申请对应的用户ID
+  // 获取这些职位的所有申请（HR/企业只能看到自己发起的面试：通过 applicationId 关联）
   const applications = await getPrisma().application.findMany({
     where: { jobId: { in: jobIds } },
-    select: { userId: true }
+    select: { id: true }
   });
 
-  const userIds = [...new Set(applications.map(a => a.userId))];
+  const applicationIds = applications.map(a => a.id);
 
-  // 获取这些用户的面试
+  // 只查企业面试（有 applicationId 关联的），排除求职者自己练习的模拟面试
   const interviews = await getPrisma().interview.findMany({
-    where: { userId: { in: userIds } },
+    where: { applicationId: { in: applicationIds } },
     include: {
       user: {
         select: { id: true, name: true, email: true }
