@@ -488,17 +488,16 @@ export default function EnterpriseInterviewRoom() {
                 <span>共 {questionCount} 道题</span>
               </div>
               <button
-                onClick={() => navigate('/enterprise-interviews')}
+                onClick={() => navigate('/practice')}
                 className="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-700 hover:to-brand-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
               >
-                返回企业面试
+                返回首页
               </button>
-              {/* 无条件跳转备用按钮：React Router 导航失败时使用 */}
               <button
-                onClick={() => { window.location.href = '/enterprise-interviews'; }}
-                className="px-6 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors mt-2"
+                onClick={() => navigate('/enterprise-interviews')}
+                className="px-6 py-2.5 text-sm font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/30 rounded-xl transition-colors mt-2"
               >
-                强制返回
+                查看其他企业面试
               </button>
             </div>
           )}
