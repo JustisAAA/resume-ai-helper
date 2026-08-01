@@ -2,8 +2,11 @@ import axios from 'axios';
 import { getPrisma } from '../index';
 import { sanitizeError } from '../utils/sanitize';
 
-const APPID = process.env.YUANQI_ENTERPRISE_APPID || '';
-const APPKEY = process.env.YUANQI_ENTERPRISE_APPKEY || '';
+// 企业AI智能体配置（若无独立的企业智能体，回退到通用智能体）
+// 优先使用 YUANQI_ENTERPRISE_APPID/APPKEY（企业专属智能体）
+// 未配置时回退到 YUANQI_APPID/APPKEY（通用智能体）
+const APPID = process.env.YUANQI_ENTERPRISE_APPID || process.env.YUANQI_APPID || '';
+const APPKEY = process.env.YUANQI_ENTERPRISE_APPKEY || process.env.YUANQI_APPKEY || '';
 const API_URL = 'https://yuanqi.tencent.com/openapi/v1/agent/chat/completions';
 
 // ---------- 类型定义 ----------
@@ -39,7 +42,7 @@ export async function analyzeResumeWithConfig(
   userId: string
 ): Promise<AIAnalysisResult | null> {
   if (!APPID || !APPKEY) {
-    throw new Error('企业AI智能体未配置，请在 .env 中设置 YUANQI_ENTERPRISE_APPID 和 YUANQI_ENTERPRISE_APPKEY');
+    throw new Error('AI智能体未配置，请在 .env 中设置 YUANQI_APPID 和 YUANQI_APPKEY');
   }
 
   const prompt = `
