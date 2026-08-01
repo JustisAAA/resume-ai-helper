@@ -234,8 +234,8 @@ export default function HRResumeDetail() {
                 </div>
               );
             })()}
-            {/* 下载按钮 */}
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-center gap-3">
+            {/* 下载按钮（仅保留原始文件下载） */}
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-center">
               {resume.fileUrl ? (
                 <a href={resume.fileUrl.startsWith('http') ? resume.fileUrl : getImageUrl(resume.fileUrl)} target="_blank" rel="noopener noreferrer" download={resume.fileName || 'resume.docx'}
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand-600 bg-brand-50 rounded-xl hover:bg-brand-100 border border-brand-200">
@@ -243,23 +243,6 @@ export default function HRResumeDetail() {
                   {resume.fileName && <span className="text-xs text-gray-400 ml-1">({resume.fileName})</span>}
                 </a>
               ) : null}
-              {/* 始终可以从文本内容生成可下载文件 */}
-              {((resume.content || resume.rawText)) && (
-                <button
-                  onClick={() => {
-                    const text = resume.content || resume.rawText || '';
-                    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${resume.fileName || resume.title || '简历'}.txt`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600">
-                  <ArrowDownTrayIcon className="w-4 h-4" />下载文本文件(.txt)
-                </button>
-              )}
             </div>
           </div>
         </div>
