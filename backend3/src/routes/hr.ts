@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { authenticateToken, requireHR, requireEnterpriseOrHR, AuthRequest } from '../middleware/auth';
+import { getPrisma } from '../index';
 import {
   hrLogin, getHRDashboard, getHRApplications,
   getHRApplicationResume, updateHRApplicationStatus, updateHRProfile,
@@ -73,11 +74,28 @@ router.post('/applications/:id/ai-analyze', authenticateToken, requireEnterprise
     if (!scoringConfig?.scoringPoints?.length) {
       return res.status(400).json({ error: '请设置得分点' });
     }
-    const result = await analyzeApplicationResume(req.params.id, scoringConfig, req.user!.userId);
+
+    // 决定传给AI接口的userId：
+    // - 企业用户：直接用自己userId
+    // - HR子账号：用所属企业的ownerUserId（AI智能体白名单里是企业的userId）
+    let aiUserId = req.user!.userId;
+    if (req.user!.role === 'HR') {
+      const hrAccount = await getPrisma().hRAccount.findUnique({
+        where: { userId: req.user!.userId },
+        select: { enterprise: { select: { userId: true } } }
+      });
+      if (!hrAccount?.enterprise) {
+        return res.status(400).json({ error: 'HR账号未关联企业' });
+      }
+      aiUserId = hrAccount.enterprise.userId;
+    }
+
+    const result = await analyzeApplicationResume(req.params.id, scoringConfig, aiUserId);
     res.json({ message: 'AI分析完成', analysis: result });
   } catch (error: any) {
-    console.error('操作失败:', sanitizeError(error));
-    res.status(400).json({ error: '操作失败，请稍后重试' });
+    console.error('AI分析失败:', sanitizeError(error));
+    // 透传真实错误信息，方便排查
+    res.status(400).json({ error: error.message || '操作失败，请稍后重试' });
   }
 });
 
