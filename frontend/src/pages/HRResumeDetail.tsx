@@ -134,6 +134,18 @@ export default function HRResumeDetail() {
                   <p className="text-sm text-gray-600 dark:text-gray-300">{aiAnalysis.summary}</p>
                 </div>
               </div>
+              {aiAnalysis.totalScore === 0 && (
+                <div className="px-6 py-3 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800 flex items-start gap-2">
+                  <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    检测到综合评分为 0，可能是评分配置不完整（如得分点缺少评分标准、考察要点）。请点击
+                    <button onClick={() => setShowScoring(true)} className="mx-1 font-semibold underline underline-offset-2 hover:text-amber-600">重新配置评分标准</button>
+                    后再次分析，AI 会给出更合理的评估。
+                  </p>
+                </div>
+              )}
             </div>
             {aiAnalysis.scoringPoints?.length > 0 && (
               <div className="p-6 border-b border-gray-100">

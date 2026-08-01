@@ -52,7 +52,7 @@ export async function analyzeResumeWithConfig(
 ${config.scoringPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 【评分标准说明】
-${config.criteria}
+${config.criteria || '（未提供详细评分标准）'}
 
 【考察要点】
 ${config.keyPoints || '无特殊要点'}
@@ -63,7 +63,13 @@ ${config.keyPoints || '无特殊要点'}
 【简历内容】
 ${resumeContent}
 
-请按照系统提示词中的JSON格式输出分析结果。总分要根据得分点的分数综合计算。只输出JSON，不要加任何其他文字。
+## 重要规则
+1. 如果【评分标准说明】为空或不具体，不要拒绝对话。请根据简历内容，从"与岗位的匹配度、专业技能、项目经历、教育背景、综合素质"等通用维度，结合岗位特点给每个得分点一个合理的基础评分（默认中等偏上，如60-80分），并在评分备注中说明"评分标准不明确，已按通用维度评估"。
+2. 每个得分点都要给出具体的分数（0-100）和一句简短点评。
+3. 总分 = 各得分点分数的加权平均（默认均权），必须在 0-100 之间。
+4. 必须返回完整的JSON，包含所有字段：totalScore、passed、verdict、scoringPoints、strengths、weaknesses、summary。
+
+请按照系统提示词中的JSON格式输出分析结果。只输出JSON，不要加任何其他文字。
 `;
 
   try {
