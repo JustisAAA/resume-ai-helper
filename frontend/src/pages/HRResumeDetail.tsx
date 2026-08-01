@@ -5,7 +5,7 @@ import ScoringConfigModal from '../components/ScoringConfigModal';
 import { getImageUrl } from '../utils/image';
 import { useToast } from '../components/Toast';
 import ThemeToggle from '../components/ThemeToggle';
-import Loading from '../components/Loading';
+import Loading, { ButtonSpinner } from '../components/Loading';
 import ErrorAlert from '../components/ErrorAlert';
 import {
   ArrowLeftIcon,
@@ -252,7 +252,7 @@ export default function HRResumeDetail() {
           <div className="flex items-center gap-3">
             <button onClick={() => setShowScoring(true)} disabled={analyzing}
               className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 disabled:opacity-50 shadow-sm">
-              {analyzing ? <><Loading size="sm" />分析中...</> : <><SparklesIcon className="w-4 h-4" />{aiAnalysis ? '重新分析' : 'AI 分析'}</>}
+              {analyzing ? <><ButtonSpinner className="text-white" />分析中...</> : <><SparklesIcon className="w-4 h-4" />{aiAnalysis ? '重新分析' : 'AI 分析'}</>}
             </button>
             {aiAnalysis && <span className={`text-sm font-bold ${getScoreColor(aiAnalysis.totalScore)}`}>AI评分 {aiAnalysis.totalScore} 分</span>}
           </div>
