@@ -1,7 +1,6 @@
 ﻿import { useNavigate } from 'react-router-dom'
 import ThemeToggle from '../components/ThemeToggle'
 import { RESUME_TEMPLATES, ResumeTemplate } from '../data/templates'
-import ResumeTemplatePreview from '../components/ResumeTemplatePreview'
 
 
 export default function Templates() {
@@ -46,9 +45,27 @@ export default function Templates() {
             <div key={template.id} className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-lg hover:border-violet-200 transition-all duration-300">
               {/* 预览区 */}
               <div className={`relative h-64 bg-gradient-to-br ${template.bgGradient} flex items-center justify-center overflow-hidden`}>
-                {/* 真实模板预览 */}
-                <div className="w-3/4 h-5/6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 overflow-hidden transform group-hover:scale-105 transition-transform duration-300">
-                  <ResumeTemplatePreview category={template.category} />
+                {/* 模拟简历预览 */}
+                <div className="w-3/4 h-5/6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 space-y-2 transform group-hover:scale-105 transition-transform duration-300">
+                  {/* 头部色块 */}
+                  <div className={`h-3 rounded-full bg-gradient-to-r ${template.color} w-2/3`} />
+                  {/* 模拟文本行 */}
+                  <div className="space-y-1.5">
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
+                  </div>
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-800" />
+                  <div className="space-y-1.5">
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+                  </div>
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-800" />
+                  <div className="space-y-1.5">
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                  </div>
                 </div>
                 {/* 悬浮遮罩 + 按钮 */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
