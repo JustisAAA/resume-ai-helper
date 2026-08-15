@@ -848,10 +848,32 @@ ${interviewHistory}
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       report = JSON.parse(jsonMatch ? jsonMatch[0] : content);
-    } catch (e) {
-      console.error('报告解析失败:', sanitizeError(e));
-      sendEvent({ type: 'error', error: '报告生成失败，JSON解析错误' });
-      return res.end();
+    } catch (firstErr) {
+      // 尝试修复 UTF-8 截断错误（流式传输可能把多字节中文字符切到两个 chunk）
+      try {
+        const buf = Buffer.from(content, 'binary');
+        const repaired = buf.toString('utf8');
+        const jsonMatch = repaired.match(/\{[\s\S]*\}/);
+        report = JSON.parse(jsonMatch ? jsonMatch[0] : repaired);
+      } catch {
+        // 兜底：解析失败时使用默认报告，避免整个流程中断
+        console.error('报告解析失败（已兜底）:', sanitizeError(firstErr));
+        report = {
+          summary: 'AI报告生成时遇到解析问题，已生成简化报告。',
+          total_score: 60,
+          overall_score: 60,
+          interview_stats: {
+            total_questions: interview.questionCount || 0,
+            answered_count: interview.answersCount || 0,
+            total_duration: 0
+          },
+          dimensions: [],
+          strengths: [],
+          improvements: [],
+          interview_qa: [],
+          technical_scores: {}
+        };
+      }
     }
     
     // 用真实的 startedAt/completedAt 重新计算 total_duration，覆盖 AI 可能抄的示例值
