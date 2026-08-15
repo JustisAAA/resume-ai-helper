@@ -207,7 +207,16 @@ export default function ToolsQuestions() {
                 <div className="bg-gradient-to-r from-cyan-50 to-cyan-100/50 px-6 py-4 border-b border-cyan-200/50">
                   <h3 className="font-bold text-gray-900 dark:text-white">整体评估</h3>
                 </div>
-                <div className="p-6"><p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{result.overall_assessment}</p></div>
+                <div className="p-6">
+                  {result.overall_assessment.includes('{"questions"') || result.overall_assessment.trim().startsWith('{') ? (
+                    // AI 偶尔会把整体评估输出成 JSON 字面量，显示提示而不是原始字符串
+                    <div className="text-sm text-amber-600 dark:text-amber-400">
+                      ⚠️ 评估信息格式异常，请参考下方问题列表
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{result.overall_assessment}</p>
+                  )}
+                </div>
               </div>
             )}
 
