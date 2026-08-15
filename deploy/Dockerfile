@@ -12,9 +12,12 @@ RUN npm run build
 # ========== 阶段2：构建后端 ==========
 FROM node:22-alpine AS backend-build
 WORKDIR /build/backend3
+# 先复制 package.json 安装依赖（跳过 postinstall 的 prisma generate）
 COPY backend3/package*.json ./
-RUN npm install
+RUN npm install --ignore-scripts
+# 再复制全量代码（含 prisma/schema.prisma）
 COPY backend3/ ./
+# 此时 schema 已就位，再执行 prisma generate
 RUN npx prisma generate && npm run build
 
 # ========== 阶段3：生产运行 ==========
