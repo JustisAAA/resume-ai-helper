@@ -525,31 +525,32 @@ export default function EnterpriseInterviewRoom() {
               disabled={submitting}
               className="w-full px-4 py-3 pr-10 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50 transition-all duration-200"
             />
-            {/* 语音输入按钮 */}
-            <button
-              type="button"
-              onClick={isListening ? stopListening : startListening}
-              disabled={submitting}
-              className={`absolute bottom-2 right-2 p-1.5 rounded-lg transition-colors ${
-                isListening
-                  ? 'bg-red-500 text-white animate-pulse'
-                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              title={isListening ? '停止录音' : '语音输入'}
-            >
-              {isListening ? (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2" />
-                  <line strokeLinecap="round" strokeLinejoin="round" x1="12" y1="19" x2="12" y2="23" />
-                  <line strokeLinecap="round" strokeLinejoin="round" x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              )}
-            </button>
+            {false && (
+              <button
+                type="button"
+                onClick={isListening ? stopListening : startListening}
+                disabled={submitting}
+                className={`absolute bottom-2 right-2 p-1.5 rounded-lg transition-colors ${
+                  isListening
+                    ? 'bg-red-500 text-white animate-pulse'
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+                title={isListening ? '停止录音' : '语音输入'}
+              >
+                {isListening ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2" />
+                    <line strokeLinecap="round" strokeLinejoin="round" x1="12" y1="19" x2="12" y2="23" />
+                    <line strokeLinecap="round" strokeLinejoin="round" x1="8" y1="23" x2="16" y2="23" />
+                  </svg>
+                )}
+              </button>
+            )}
             </div>
             <button
               onClick={handleSubmit}
