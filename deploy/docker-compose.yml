@@ -1,8 +1,7 @@
 # 简历面试AI助手 - Docker Compose 编排
 # 包含：PostgreSQL数据库 + 应用服务
 # 用法：docker compose up -d
-
-version: "3.8"
+# 敏感配置通过 deploy/.env 提供（.env 已被 gitignore，不会进 GitHub）
 
 services:
   # ===== PostgreSQL 数据库 =====
@@ -12,7 +11,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: resume_ai
-      POSTGRES_PASSWORD: ResumeAI@2026
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: resume_ai
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -33,17 +32,17 @@ services:
       - "3002:3002"
     environment:
       # 数据库连接（PostgreSQL）
-      DATABASE_URL: postgresql://resume_ai:ResumeAI@2026@db:5432/resume_ai
-      # JWT密钥（务必修改！）
-      JWT_SECRET: resume-ai-helper-jwt-secret-key-2026-production-change-this
+      DATABASE_URL: postgresql://resume_ai:${POSTGRES_PASSWORD}@db:5432/resume_ai
+      # JWT密钥
+      JWT_SECRET: ${JWT_SECRET}
       # 运行模式
       NODE_ENV: production
-      # 腾讯元器API配置（从Railway迁移过来）
+      # 腾讯元器API配置
       YUANQI_BASE_URL: https://yuanqi.tencent.com/openapi/v1
-      YUANQI_APPID: 2047291498014477504
-      YUANQI_APPKEY: bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4
-      YUANQI_ENTERPRISE_APPID: 2063433671104457792
-      YUANQI_ENTERPRISE_APPKEY: gFipTXPk9YpEnICQCsRh4O2c6WPOq1Mi
+      YUANQI_APPID: ${YUANQI_APPID}
+      YUANQI_APPKEY: ${YUANQI_APPKEY}
+      YUANQI_ENTERPRISE_APPID: ${YUANQI_ENTERPRISE_APPID}
+      YUANQI_ENTERPRISE_APPKEY: ${YUANQI_ENTERPRISE_APPKEY}
       # 上传目录
       UPLOAD_PATH: /app/backend3/uploads
     volumes:

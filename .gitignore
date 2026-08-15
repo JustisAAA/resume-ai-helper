@@ -67,3 +67,4 @@ coverage/
 # ===== 开发文档（不上传）=====
 backend/
 docs/
+/deploy/.env
