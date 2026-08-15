@@ -823,9 +823,6 @@ export default function InterviewRoom() {
                     )}
                   </button>
                 )}
-                <div className="absolute bottom-2 right-3 text-xs text-gray-300">
-                  {answer.length} 字
-                </div>
               </div>
               <button
                 type="submit"
