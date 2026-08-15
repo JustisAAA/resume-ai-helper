@@ -1,0 +1,57 @@
+# 简历面试AI助手 - Docker Compose 编排
+# 包含：PostgreSQL数据库 + 应用服务
+# 用法：docker compose up -d
+
+version: "3.8"
+
+services:
+  # ===== PostgreSQL 数据库 =====
+  db:
+    image: postgres:16-alpine
+    container_name: resume-ai-db
+    restart: always
+    environment:
+      POSTGRES_USER: resume_ai
+      POSTGRES_PASSWORD: change-this-password
+      POSTGRES_DB: resume_ai
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resume_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ===== 应用服务（前后端一体） =====
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: resume-ai-app
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      # 数据库连接（PostgreSQL）
+      DATABASE_URL: postgresql://resume_ai:change-this-password@db:5432/resume_ai
+      # JWT密钥（务必修改！）
+      JWT_SECRET: change-this-to-a-long-random-string
+      # 运行模式
+      NODE_ENV: production
+      # 腾讯元器API配置（从Railway迁移过来）
+      YUANQI_BASE_URL: https://yuanqi.tencent.com/openapi/v1
+      YUANQI_APPID: your-appid
+      YUANQI_APPKEY: your-appkey
+      YUANQI_ENTERPRISE_APPID: your-enterprise-appid
+      YUANQI_ENTERPRISE_APPKEY: your-enterprise-appkey
+      # 上传目录
+      UPLOAD_PATH: /app/backend3/uploads
+    volumes:
+      - upload-data:/app/backend3/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  upload-data:
