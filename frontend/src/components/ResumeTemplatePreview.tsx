@@ -1,5 +1,3 @@
-import React from 'react'
-
 interface ResumeTemplatePreviewProps {
   category: 'minimal' | 'modern' | 'business' | 'creative' | 'simple'
 }
@@ -23,7 +21,7 @@ export default function ResumeTemplatePreview({ category }: ResumeTemplatePrevie
         {/* 分隔线 */}
         <div className="border-t border-gray-300 my-1" />
         {/* 工作经历段落 */}
-        {sampleText.map((t, i) => (
+        {sampleText.map((_, i) => (
           <div key={i} className="space-y-0.5">
             <div className="h-1 bg-gray-700 rounded w-1/3" />
             <div className="h-1 bg-gray-300 rounded w-full" />
