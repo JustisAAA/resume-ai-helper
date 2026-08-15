@@ -12,7 +12,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: resume_ai
-      POSTGRES_PASSWORD: change-this-password
+      POSTGRES_PASSWORD: ResumeAI@2026
       POSTGRES_DB: resume_ai
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -33,17 +33,17 @@ services:
       - "3002:3002"
     environment:
       # 数据库连接（PostgreSQL）
-      DATABASE_URL: postgresql://resume_ai:change-this-password@db:5432/resume_ai
+      DATABASE_URL: postgresql://resume_ai:ResumeAI@2026@db:5432/resume_ai
       # JWT密钥（务必修改！）
-      JWT_SECRET: change-this-to-a-long-random-string
+      JWT_SECRET: resume-ai-helper-jwt-secret-key-2026-production-change-this
       # 运行模式
       NODE_ENV: production
       # 腾讯元器API配置（从Railway迁移过来）
       YUANQI_BASE_URL: https://yuanqi.tencent.com/openapi/v1
-      YUANQI_APPID: your-appid
-      YUANQI_APPKEY: your-appkey
-      YUANQI_ENTERPRISE_APPID: your-enterprise-appid
-      YUANQI_ENTERPRISE_APPKEY: your-enterprise-appkey
+      YUANQI_APPID: 2047291498014477504
+      YUANQI_APPKEY: bIVToDNxA4s86cn2xe9FFs5jcOl3xWI4
+      YUANQI_ENTERPRISE_APPID: 2063433671104457792
+      YUANQI_ENTERPRISE_APPKEY: gFipTXPk9YpEnICQCsRh4O2c6WPOq1Mi
       # 上传目录
       UPLOAD_PATH: /app/backend3/uploads
     volumes:
