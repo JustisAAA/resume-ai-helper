@@ -116,7 +116,7 @@ const [user, setUser] = useState<UserProfile | null>(null)
 
   const handleChangePwd = async () => {
     if (!pwdOld || !pwdNew || pwdNew !== pwdConfirm) return
-    if (pwdNew.length < 6) { showToast('新密码至少6位', 'error'); return }
+    if (pwdNew.length < 8) { showToast('新密码至少8位', 'error'); return }
     setSaving(true)
     try {
       const token = localStorage.getItem('token')
@@ -391,7 +391,7 @@ const [user, setUser] = useState<UserProfile | null>(null)
                 type="password"
                 value={pwdNew}
                 onChange={e => setPwdNew(e.target.value)}
-                placeholder="新密码（至少6位）"
+                placeholder="新密码（至少8位）"
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 dark:focus:border-brand-400 transition-colors"
               />
               <input

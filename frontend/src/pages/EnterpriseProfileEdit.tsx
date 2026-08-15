@@ -198,7 +198,7 @@ export default function EnterpriseProfileEdit() {
   const handleChangePassword = async () => {
     if (!oldPassword) { setPasswordMsg('请输入当前密码'); return; }
     if (!newPassword) { setPasswordMsg('请输入新密码'); return; }
-    if (newPassword.length < 6) { setPasswordMsg('新密码至少6位'); return; }
+    if (newPassword.length < 8) { setPasswordMsg('新密码至少8位'); return; }
 
     setChangingPassword(true);
     setPasswordMsg('');
@@ -494,7 +494,7 @@ export default function EnterpriseProfileEdit() {
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                placeholder="新密码（至少6位）"
+                placeholder="新密码（至少8位）"
                 className={inputClass}
               />
             </div>

@@ -88,7 +88,7 @@ export default function Register() {
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
-                placeholder="至少6位密码"
+                placeholder="至少8位密码"
                 required
                 minLength={6}
               />

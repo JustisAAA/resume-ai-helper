@@ -45,8 +45,8 @@ export async function registerEnterprise(data: EnterpriseRegisterData) {
     throw new Error('邮箱、密码和企业名称不能为空');
   }
 
-  if (password.length < 6) {
-    throw new Error('密码长度至少6位');
+  if (password.length < 8) {
+    throw new Error('密码长度至少8位');
   }
 
   // 检查用户是否已存在

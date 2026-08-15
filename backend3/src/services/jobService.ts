@@ -42,8 +42,8 @@ export async function createJob(enterpriseId: string, data: JobCreateData) {
   if (!hrConfig.email || !hrConfig.password || !hrConfig.name) {
     throw new Error('HR邮箱、密码和姓名不能为空');
   }
-  if (hrConfig.password.length < 6) {
-    throw new Error('HR密码至少6位');
+  if (hrConfig.password.length < 8) {
+    throw new Error('HR密码至少8位');
   }
   const emailTaken = await getPrisma().user.findUnique({ where: { email: hrConfig.email } });
   if (emailTaken) throw new Error(`HR邮箱 ${hrConfig.email} 已被占用`);

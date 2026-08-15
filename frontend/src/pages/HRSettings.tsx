@@ -53,7 +53,7 @@ export default function HRSettings() {
   const handleChangePassword = async () => {
     setMsg(''); setErr('');
     if (!oldPassword || !newPassword) { setErr('请填写完整'); return; }
-    if (newPassword.length < 6) { setErr('新密码至少6位'); return; }
+    if (newPassword.length < 8) { setErr('新密码至少8位'); return; }
     setSaving(true);
     try {
       await hrAPI.updateSettings({ password: newPassword });
@@ -209,7 +209,7 @@ export default function HRSettings() {
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                placeholder="新密码（至少6位）"
+                placeholder="新密码（至少8位）"
                 className={inputClass}
               />
             </div>
